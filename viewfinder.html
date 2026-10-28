@@ -1,3 +1,5 @@
+<!doctype html>
+<html lang="ko">
 <meta charset="utf-8">
 <title>NUVI · Natural View</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -1869,6 +1871,37 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
   }
 
 </script>
+<style>
+  /* ---- 카메라 모션 모드 ---- */
+  .camchip{position:fixed;left:20px;top:20px;z-index:60;display:flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;border-radius:999px;
+    background:rgba(18,19,14,.5);color:#F1F2E4;font:600 12px/1 inherit;letter-spacing:-.01em;cursor:pointer;user-select:none;
+    -webkit-backdrop-filter:blur(16px) saturate(1.5);backdrop-filter:blur(16px) saturate(1.5);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+    transition:border-radius .35s cubic-bezier(.22,.61,.36,1),padding .35s}
+  .camchip .ci{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);flex:none}
+  .camchip .ci svg{width:15px;height:15px}
+  .camchip .ck{opacity:.45;font-weight:500;margin-left:2px}
+  .camchip .cv{display:none;position:relative;width:148px;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:#0B0C09;flex:none}
+  .camchip video,.camchip canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  .camchip video{opacity:.55;filter:grayscale(1) contrast(1.05)}
+  .camchip .ct{display:grid;gap:5px}
+  .camchip .ct b{font-weight:700;font-size:12px}
+  .camchip .ct span{font-weight:500;font-size:10.5px;color:#ADA992;max-width:150px;line-height:1.35}
+  .camchip .dot{width:6px;height:6px;border-radius:50%;background:#6A6B63;display:inline-block;margin-right:6px;vertical-align:1px}
+  .camchip.on{border-radius:18px;padding:6px 14px 6px 6px;align-items:center}
+  .camchip.on .ci{display:none}
+  .camchip.on .cv{display:block}
+  .camchip.on.seen .dot{background:var(--lime,#CCE500);box-shadow:0 0 6px rgba(204,229,0,.8)}
+  .camchip.busy .dot{background:#E0A93B}
+  html.embed .camchip{display:none}
+  @media (pointer:coarse){ .camchip:not(.force){display:none} }
+  /* 스윙 대기 — 렌즈 테두리가 숨 쉬듯 */
+  .camgo{position:fixed;left:50%;bottom:28px;z-index:60;transform:translateX(-50%);display:none;align-items:center;gap:8px;height:40px;padding:0 18px;border-radius:999px;
+    background:var(--lime,#CCE500);color:#1E1F1B;font:700 14px/1 inherit;letter-spacing:-.02em}
+  .camgo.show{display:flex;animation:camgo 1s ease-in-out infinite alternate}
+  @keyframes camgo{to{transform:translateX(-50%) scale(1.06)}}
+  @media (prefers-reduced-motion:reduce){ .camgo.show{animation:none} }
+</style>
+<div class="camchip" id="camChip" role="button" tabindex="0" aria-label="카메라로 체험하기"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.4-2h7.8l1.4 2h2.2A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg></span><span class="cv"><video playsinline muted></video><canvas></canvas></span><span class="ct"><b><i class="dot"></i><span class="cl" style="all:unset">카메라로 체험</span><span class="ck">K</span></b><span class="cs" hidden>영상은 저장되지 않아요</span></span></div><div class="camgo" id="camGo">팔을 크게 휘둘러 잡아요!</div>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
@@ -2864,7 +2897,183 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     let lastPing = 0;   // 부모 앱의 대기(데모) 타이머가 체험 중에 돌지 않게
     addEventListener("pointerdown", () => { const t = Date.now(); if (t - lastPing > 2000) { lastPing = t; try { parent.postMessage({nuvi:"vf-touch"}, "*"); } catch(e) {} } }, true);
   }
-  window.NUVI_VF = {state:()=>state, ring:RING, F, swing, pup:()=>pup, macro:()=>macro, zoom:()=>zoom};
+
+  // ===== 카메라 모션 모드 =====
+  const CAM = (() => {
+    const chip = $("camChip"), vid = chip.querySelector("video"), cv = chip.querySelector("canvas"), cx2 = cv.getContext("2d");
+    const lab = chip.querySelector(".cl"), sub = chip.querySelector(".cs"), go = $("camGo");
+    const MPV = "0.10.35", CDN = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MPV}`;
+    const MODEL_CDN = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task";
+    const C = { on:false, busy:false, pl:null, stream:null, raf:0, lastVT:-1, seenAt:0, hist:[], hand:null, sm:null,
+                still:0, stillT:0, lastT:0, actT:0, swingAt:0, shakeAt:0 };
+    // 감도 — 전시장에서 주소 뒤에 ?cam&swing=3.5 처럼 바로 바꿀 수 있다(단위: 어깨폭/초)
+    const QS = new URLSearchParams(location.search), num = (k, d) => { const v = parseFloat(QS.get(k)); return isFinite(v) ? v : d; };
+    const K = {swing: num('swing', 4.2), travel: num('travel', 1.0), still: num('still', .9), shake: num('shake', 2.4)};
+    const say = (t, s) => { lab.textContent = t; if (s !== undefined) { sub.hidden = !s; sub.textContent = s; } };
+
+    // ---- 모델 불러오기: ① 파일에 품은 것(NUVI_MP) ② 옆의 mp/ 폴더 ③ CDN ----
+    const blobURL = async (id, type) => { const el = document.getElementById(id); if (!el) return null;   // base64(gzip) → Blob URL
+      const bin = atob(el.textContent.trim()), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      const raw = await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+      el.remove(); return URL.createObjectURL(new Blob([raw], {type})); };
+    async function tryLoad(base) {
+      const vision = await import(base.mjs);
+      const fs = {wasmLoaderPath: base.js, wasmBinaryPath: base.wasm};
+      const opts = d => ({baseOptions:{modelAssetPath: base.model, delegate:d}, runningMode:"VIDEO", numPoses:1,
+                          minPoseDetectionConfidence:.5, minPosePresenceConfidence:.5, minTrackingConfidence:.5});
+      try { return await vision.PoseLandmarker.createFromOptions(fs, opts("GPU")); }
+      catch (e) { return await vision.PoseLandmarker.createFromOptions(fs, opts("CPU")); }
+    }
+    async function loadModel() {
+      const srcs = [];
+      if (document.getElementById("mp-wasm")) srcs.push(async () => ({mjs: await blobURL("mp-mjs", "text/javascript"), js: await blobURL("mp-js", "text/javascript"),
+                                                                 wasm: await blobURL("mp-wasm", "application/wasm"), model: await blobURL("mp-model", "application/octet-stream")}));
+      if (/^https?:$/.test(location.protocol)) srcs.push(() => { const b = new URL("mp/", location.href).href;
+        return {mjs: b + "vision_bundle.mjs", js: b + "vision_wasm_internal.js", wasm: b + "vision_wasm_internal.wasm", model: b + "pose_landmarker_lite.task"}; });
+      srcs.push(() => ({mjs: CDN + "/vision_bundle.mjs", js: CDN + "/wasm/vision_wasm_internal.js", wasm: CDN + "/wasm/vision_wasm_internal.wasm", model: MODEL_CDN}));
+      let err;
+      for (const f of srcs) { try { return await tryLoad(await f()); } catch (e) { err = e; console.warn("[NUVI cam] 불러오기 실패", e); } }
+      throw err;
+    }
+
+    async function start() {
+      if (C.on || C.busy) return;
+      C.busy = true; chip.classList.add("on", "busy"); say("카메라 켜는 중…", "영상은 저장되지 않아요");
+      try {
+        C.stream = await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640}, height:{ideal:480}, facingMode:"user"}, audio:false});
+        vid.srcObject = C.stream; await vid.play();
+        say("모션 인식 준비 중…");
+        if (!C.pl) C.pl = await loadModel();
+        C.on = true; C.busy = false; chip.classList.remove("busy"); C.seenAt = 0;
+        say("카메라 앞에 서 주세요", "영상은 저장되지 않아요");
+        cv.width = 296; cv.height = 222;
+        loop();
+      } catch (e) {
+        console.warn("[NUVI cam]", e); stop();
+        setMsg(e && e.name === "NotAllowedError" ? "카메라 권한을 허용해 주세요" : "카메라를 쓸 수 없어요 — 마우스로 체험해요", "alert"); msgHold = performance.now() + 2500;
+      }
+    }
+    function stop() {
+      C.on = false; C.busy = false; cancelAnimationFrame(C.raf);
+      if (C.stream) C.stream.getTracks().forEach(t => t.stop()); C.stream = null; vid.srcObject = null;
+      chip.classList.remove("on", "busy", "seen"); say("카메라로 체험", null); go.classList.remove("show");
+      if (state === "IDLE") setMsg("렌즈를 드래그해서 주변을 둘러보세요");
+    }
+    function loop() {
+      if (!C.on) return;
+      C.raf = requestAnimationFrame(loop);
+      const now = performance.now();
+      if (vid.readyState < 2 || vid.currentTime === C.lastVT || now - C.lastT < 30) return;
+      C.lastVT = vid.currentTime;
+      let r; try { r = C.pl.detectForVideo(vid, now); } catch (e) { return; }
+      feed(r && r.landmarks && r.landmarks[0], now, vid.videoWidth / Math.max(1, vid.videoHeight));
+    }
+
+    // ---- 자세 → 동작 ----
+    const V = p => p && (p.visibility === undefined || p.visibility > .45);
+    function feed(lm, now, asp = 4/3) {
+      const dt = Math.min(.1, C.lastT ? (now - C.lastT) / 1000 : .033); C.lastT = now;
+      draw(lm);
+      if (!lm || !V(lm[11]) || !V(lm[12])) { lost(now); return; }
+      const sx = (lm[11].x - lm[12].x) * asp, sy = lm[11].y - lm[12].y, sw = Math.max(.04, Math.hypot(sx, sy));
+      const cx = (lm[11].x + lm[12].x) / 2, cy = (lm[11].y + lm[12].y) / 2;
+      // 손: 더 높이 든 손목. 바꾸려면 다른 손이 0.3 어깨폭 이상 높아야
+      const rel = i => V(lm[i]) ? {x: -(lm[i].x - cx) * asp / sw, y: (lm[i].y - cy) / sw, i} : null;   // 거울처럼 — 오른쪽으로 뻗으면 오른쪽
+      const L = rel(15), R = rel(16);
+      let h = C.hand === 15 ? L : C.hand === 16 ? R : null;
+      const other = h === L ? R : L;
+      if (!h || (other && other.y < h.y - .3)) h = (L && R) ? (L.y < R.y ? L : R) : (L || R);
+      if (!h) { lost(now); return; }
+      C.hand = h.i;
+      if (!C.seenAt) { C.seenAt = now; chip.classList.add("seen"); }
+      C.actT = now;
+      // 매끄럽게 — 빠를수록 덜 거른다(one-euro 비슷)
+      if (!C.sm) C.sm = {x: h.x, y: h.y};
+      const raw = Math.hypot(h.x - C.sm.x, h.y - C.sm.y) / Math.max(dt, .016), a = clamp(.18 + raw * .06, .18, .85);
+      C.sm.x += (h.x - C.sm.x) * a; C.sm.y += (h.y - C.sm.y) * a;
+      C.hist.push({x: h.x, y: h.y, t: now}); while (C.hist.length && now - C.hist[0].t > 400) C.hist.shift();
+      const win = C.hist.filter(q => now - q.t <= 140), q0 = win[0] || C.hist[0];
+      const sp = q0 ? Math.hypot(h.x - q0.x, h.y - q0.y) / Math.max(.03, (now - q0.t) / 1000) : 0;   // 어깨폭/초
+      const raised = h.y < 1.4;
+      act(h, sp, raised, dt, now);
+    }
+    function lost(now) {
+      chip.classList.remove("seen"); C.seenAt = 0; C.sm = null; C.hist.length = 0;
+      if (C.on) say("카메라 앞에 서 주세요");
+      if (state === "DONE" && C.actT && now - C.actT > 20000) { C.actT = 0; $("againBtn").click(); }   // 아무도 없으면 처음으로
+    }
+    function act(h, sp, raised, dt, now) {
+      const still = sp < K.still;
+      C.still = still ? C.still + dt : 0;
+      if (state === "IDLE" || state === "LOCK") {
+        say(state === "LOCK" ? "그대로 멈춰요" : "손으로 렌즈를 움직여요");
+        if (raised && !tween && !RING.drag) {
+          // 손 위치 → 바라보는 곳(절대 위치). 가운데 근처면 사슴벌레 쪽으로 살짝 끌어당긴다
+          let tx = W / 2 + clamp(C.sm.x / 2.1, -1, 1) * W * .62, ty = H * .5 + clamp((C.sm.y + .6) / 1.8, -1, 1) * H * .62;
+          if (state === "LOCK") { tx += (B.x - tx) * .45; ty += (B.y - ty) * .45; }
+          const k = 1 - Math.pow(.0009, dt);
+          cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
+          // 멈추면 다가가고(줌 인), 대상을 놓치면 천천히 물러난다
+          if (state === "LOCK" && still) zoom = Math.min(2.0, zoom + dt * .6);
+          else if (state === "IDLE" && zoom > 1) zoom = Math.max(1, zoom - dt * .45);
+          zoomTarget = zoom; applyScene();
+        }
+        if (state === "LOCK" && zoom >= 1.995 && C.still > .7 && canMacro()) { C.still = 0; setMacro(true); }
+      } else if (state === "MACRO") {
+        say("가만히… 곧 캡쳐해요");
+        if (C.still > 1.4) { C.still = 0; capBtn.click(); }
+      } else if (state === "SCAN") {
+        say("움직이면 안 돼요!");
+        if (sp > K.shake && now - C.shakeAt > 700) { C.shakeAt = now; scanShake(); }
+      } else if (state === "PROMPT") {
+        say("지금! 팔을 휘둘러요"); go.classList.add("show");
+        const win = C.hist.filter(q => now - q.t <= 220), a0 = win[0];
+        const travel = a0 ? Math.hypot(h.x - a0.x, h.y - a0.y) : 0;
+        if (sp > K.swing && travel > K.travel && now - C.swingAt > 800) {
+          C.swingAt = now; go.classList.remove("show");
+          const Ls = lens.clientWidth, pts = win.map(q => ({x: Ls / 2 + q.x / 2.2 * Ls * .5, y: Ls / 2 + (q.y + .4) / 2 * Ls * .5, t: q.t}));
+          swing(pts);
+        }
+      } else if (state === "CATCH") {
+        go.classList.remove("show");
+        if (catchConfirm.classList.contains("show")) {
+          say("한 번 더 휘두르면 도감에 쏙");
+          if (sp > K.swing && now - C.swingAt > 900) { C.swingAt = now; ccAddBtn.click(); }
+        }
+      } else if (state === "DONE") {
+        say("휘두르면 다시 탐험해요");
+        if (sp > K.swing && now - C.swingAt > 3500) { C.swingAt = now; $("againBtn").click(); }
+      }
+    }
+    // 작은 화면: 어깨 · 팔 · 손목만 점선처럼
+    function draw(lm) {
+      const w = cv.width, h = cv.height; cx2.clearRect(0, 0, w, h); if (!lm) return;
+      const P = i => ({x: lm[i].x * w, y: lm[i].y * h});
+      cx2.lineCap = "round"; cx2.strokeStyle = "rgba(241,242,228,.75)"; cx2.lineWidth = 2.4;
+      for (const [a, b] of [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24]]) {
+        if (!V(lm[a]) || !V(lm[b])) continue; const p = P(a), q = P(b);
+        cx2.beginPath(); cx2.moveTo(p.x, p.y); cx2.lineTo(q.x, q.y); cx2.stroke();
+      }
+      if (C.hand && V(lm[C.hand])) { const p = P(C.hand); cx2.fillStyle = "#CCE500";
+        cx2.beginPath(); cx2.arc(p.x, p.y, 7, 0, Math.PI * 2); cx2.fill(); }
+    }
+
+    chip.addEventListener("click", () => (C.on || C.busy) ? stop() : start());
+    chip.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); chip.click(); } });
+    addEventListener("keydown", e => { if ((e.key === "k" || e.key === "K") && !e.metaKey && !e.ctrlKey) chip.click(); });
+    // 카메라 모드 문구
+    const CT = {"렌즈를 드래그해서 주변을 둘러보세요": "손을 들어 렌즈를 움직여 보세요",
+                "사슴벌레 발견! ＋ 버튼으로 더 가까이": "사슴벌레 발견! 손을 멈추면 다가가요",
+                "가까워졌어요! 베젤을 돌려 접사 모드로": "조금만 더 멈춰요 — 접사 모드로",
+                "아직 멀어요! ＋ 버튼으로 2.0x까지": "조금 더 가만히 — 가까이 다가가요",
+                "접사 모드! 특징을 관찰해요 — 준비되면 캡쳐": "접사 모드! 가만히 있으면 캡쳐해요",
+                "캡쳐 완료! 렌즈 위로 휙 — 손목 스윙!": "지금! 팔을 크게 휘둘러 잡아요!",
+                "잡았습니다!": "잡았습니다! 한 번 더 휘두르면 도감에 쏙"};
+    if (QS.has("cam") || location.hash === "#cam") { chip.classList.add("force"); setTimeout(start, 600); }
+    return {start, stop, feed, on: () => C.on, text: t => (C.on && CT[t]) || t, c: C, k: K};
+  })();
+  { const _sm = setMsg; setMsg = (t, cls) => _sm(CAM.text(t), cls); }
+  window.NUVI_VF = {cam:CAM, view:()=>({x:cam.x,y:cam.y,zoom}), state:()=>state, ring:RING, F, swing, pup:()=>pup, macro:()=>macro, zoom:()=>zoom};
 
   setMsg("렌즈를 드래그해서 주변을 둘러보세요");
   sizeFX();
