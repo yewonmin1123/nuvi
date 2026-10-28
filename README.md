@@ -15,4 +15,5 @@
 포함된 오픈소스: GSAP 3.15 · Draggable · InertiaPlugin · MotionPathPlugin · CustomEase · CustomBounce · CustomWiggle (GreenSock standard license, https://gsap.com/standard-license)
 
 
-카메라 모드(`viewfinder.html?cam`)는 [MediaPipe Tasks Vision](https://github.com/google-ai-edge/mediapipe) 0.10.35와 Pose Landmarker(lite) 모델(Apache-2.0)을 `mp/`에 담아 브라우저 안에서만 돌립니다. 카메라 영상은 저장하거나 보내지 않습니다.
+카메라 모드(`viewfinder.html?cam`)는 [MediaPipe Tasks Vision](https://github.com/google-ai-edge/mediapipe) 0.10.35와 Pose Landmarker(lite) · Gesture Recognizer 모델(Apache-2.0)을 `mp/`에 담아 브라우저 안에서만 돌립니다. 카메라 영상은 저장하거나 보내지 않습니다.
+감도 보정: `viewfinder.html?calib` (결과는 그 브라우저에 저장).
