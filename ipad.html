@@ -249,7 +249,8 @@ function NUVI_SWIPE(root, onDone) {
 
   window.NUVI_BLOCK = () => demo || Date.now() < swallow;
   const LQS = null;   // 크롬(리퀴드 메탈) 워드마크는 뺐다 — 원래 워드마크 그대로
-  const SW = NUVI_SWIPE(hosts.home.shadowRoot, () => { EX.burst(hosts.home.shadowRoot.querySelector('.sw-knob'), {n: 16, r: 52, flat: .6}); show('map'); });
+  const SW = NUVI_SWIPE(hosts.home.shadowRoot, () => { EX.burst(hosts.home.shadowRoot.querySelector('.sw-knob'), {n: 16, r: 52, flat: .6}); if (!demo && OPENQR) OPENQR(); else show('map'); });
+    const OPENQR = null, ov = () => null, closeOV = () => {};
   
 function NUVI_EXTRAS(hosts, app, X) {
   const E = X.data, say = (m) => X.say(m), blocked = () => X.block();
@@ -1523,7 +1524,7 @@ function NUVI_MOTION2(hosts, X) {
   };
   stage.addEventListener('pointerdown', touched, true);
   const IDLE = window.NUVI_IDLE || D.idle;
-  setInterval(() => { if (!demo && Date.now() - lastTouch > IDLE) startDemo(); }, 1000);
+  setInterval(() => { if (!demo && Date.now() - lastTouch > (ov() ? IDLE * 2 : IDLE)) { closeOV(); startDemo(); } }, 1000);   // 휴대폰: QR·뷰파인더가 열려 있으면 두 배 기다린 뒤 닫는다
 
   // 확대·길게 누르기·스크롤 막기 (전시용)
   ['gesturestart', 'gesturechange', 'contextmenu'].forEach(t => document.addEventListener(t, e => e.preventDefault(), {passive: false}));
@@ -1531,7 +1532,8 @@ function NUVI_MOTION2(hosts, X) {
   document.addEventListener('dblclick', e => e.preventDefault());
 
   const start = (location.hash || '').slice(1);
-  show(D.scr[start] ? start : 'splash', 'none');
+  show(D.scr[start] ? start : (start === 'qr' || start === 'vf') ? 'home' : 'splash', 'none');
+  if (OPENQR && start === 'qr') openQR(); else if (OPENQR && start === 'vf') { openQR(); openVF(); }
 })();
 </script>
 

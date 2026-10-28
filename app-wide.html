@@ -1533,7 +1533,7 @@ function show(v, quiet) {
   goo(ink, {y: a.offsetTop}, 'y', !quiet); if (document.body.classList.contains('flow')) scrollTo(0, 0);
   if (pup) { if (v === 'collection') pup.start(); else pup.stop(); }
   if (!quiet) { enter(v); if (MO) G.fromTo(a.querySelector('svg'), {scale: .6, rotation: -16}, {scale: 1, rotation: 0, duration: .8, ease: 'elastic.out(1,.4)'}); }
-  if (location.hash.slice(1) !== v) history.replaceState(null, '', '#' + v);
+  if (location.hash.slice(1) !== v) { try { history.replaceState(null, '', '#' + v); } catch (e) {} }   // 미리보기 iframe(about:srcdoc)에선 막혀 있다
 }
 $$('#nav a, .who').forEach(a => a.addEventListener('click', e => { e.preventDefault(); show(a.getAttribute('href').slice(1)); }));
 addEventListener('hashchange', () => show(location.hash.slice(1)));
