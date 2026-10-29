@@ -3033,9 +3033,8 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
   const trkF7 = v => (Math.abs(v) % 1).toFixed(7);
   // 추적 박스 하나: 사각형 + X자 대각선 + 소수 라벨
   function trkBox(x, bx, by, bw, bh, col, lab, labCol, sc = 1) {
-    x.strokeStyle = col; x.lineWidth = 1.1 * sc; x.strokeRect(bx, by, bw, bh);
-    x.globalAlpha *= .75; x.beginPath(); x.moveTo(bx, by); x.lineTo(bx + bw, by + bh); x.moveTo(bx + bw, by); x.lineTo(bx, by + bh); x.stroke(); x.globalAlpha /= .75;
-    if (lab) { x.fillStyle = labCol; x.font = `500 ${10.5 * sc}px ui-monospace,"SF Mono",Menlo,monospace`; x.fillText(lab, bx + bw + 3 * sc, by + 4 * sc); }
+    x.strokeStyle = col; x.lineWidth = 1.1 * sc; x.strokeRect(Math.round(bx) + .5, Math.round(by) + .5, Math.round(bw), Math.round(bh));   // X자 없이 깔끔한 사각형만
+    if (lab) { x.fillStyle = labCol; x.font = `500 ${9 * sc}px ui-monospace,"SF Mono",Menlo,monospace`; x.textBaseline = "top"; x.fillText(lab, Math.round(bx + bw + 4 * sc), Math.round(by)); x.textBaseline = "alphabetic"; }
   }
 
   // ===== 렌즈 스캔 트래킹 — 렌즈에 보이는 영상을 실제로 분석 =====
@@ -3067,9 +3066,9 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       // 윤곽 문턱: 상위 11%
       let mx = 0; for (let i = 0; i < mag.length; i++) if (mag[i] > mx) mx = mag[i];
       const hist = new Uint32Array(64); for (let i = 0; i < mag.length; i++) hist[Math.min(63, mag[i] / (mx || 1) * 64 | 0)]++;
-      let acc = 0, th = mx; for (let b = 63; b >= 0; b--) { acc += hist[b]; if (acc > mag.length * .085) { th = b / 64 * mx; break; } }
+      let acc = 0, th = mx; for (let b = 63; b >= 0; b--) { acc += hist[b]; if (acc > mag.length * .07) { th = b / 64 * mx; break; } }
       const u = L / S;
-      x.globalAlpha = a * .55; x.fillStyle = "#5CF59A";
+      x.globalAlpha = a * .3; x.fillStyle = "#5CF59A";
       for (let y = 1; y < S - 1; y++) for (let xx = 1; xx < S - 1; xx++) { const i = y * S + xx; if (mag[i] > th) x.fillRect(xx * u, y * u, u * .62, u * .62); }
       // 덩어리: 16×16 칸마다 윤곽 점의 무게중심 · 퍼짐을 재고, 점수 높은 칸부터 겹치지 않게 골라 박스로 (격자 티 안 나게)
       const N = 16, cs = S / N, cells = [];
@@ -3084,7 +3083,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       cells.sort((p, q) => q.v - p.v);
       const top = [];
       for (const c of cells) { if (top.length >= 8) break; if (top.some(t => Math.abs(t.cx - c.cx) < 2.2 && Math.abs(t.cy - c.cy) < 2.2)) continue; top.push(c); }
-      const blobs = top.map(c => { const bw = (c.sdx * 2.6 + cs * .5) * u * (1 + c.v), bh = (c.sdy * 2.6 + cs * .5) * u * (1 + c.v);
+      const blobs = top.map(c => { const bw = (c.sdx * 2.6 + cs * .5) * u * (1 + c.v) * .5, bh = (c.sdy * 2.6 + cs * .5) * u * (1 + c.v) * .5;   // 50%
         return {x: c.x * u - bw / 2, y: c.y * u - bh / 2, w: bw, h: bh, v: c.v}; });
       // 이전 박스와 짝지어 부드럽게 — 추적되는 느낌
       const nt = [];
@@ -3095,12 +3094,11 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       }
       nt.forEach(t => t.used = 0); tracks = nt;
       // 연결선 → 박스 → 라벨
-      const tg = toScreen(B); x.globalAlpha = a * .55; x.strokeStyle = "#A8FFC9"; x.lineWidth = .8;
+      const tg = toScreen(B); x.globalAlpha = a * .4; x.strokeStyle = "#A8FFC9"; x.lineWidth = .7;
       const cs2 = tracks.map(t => ({x: t.x + t.w / 2, y: t.y + t.h / 2})).sort((p, q) => p.x - q.x);
       x.beginPath(); cs2.forEach((p, i) => i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)); x.stroke();
-      x.beginPath(); cs2.slice(0, 4).forEach(p => { x.moveTo(tg.x, tg.y); x.lineTo(p.x, p.y); }); x.stroke();
       x.globalAlpha = a;
-      tracks.forEach((t, i) => trkBox(x, t.x, t.y, t.w, t.h, "#3DF58A", i < 5 ? trkF7(t.v * 1.7 + t.ph + now / 9e4) : "", "#EFFFF4"));
+      tracks.forEach((t, i) => trkBox(x, t.x, t.y, t.w, t.h, "#3DF58A", i < 3 ? trkF7(t.v * 1.7 + t.ph + now / 9e4) : "", "#EFFFF4"));
     }
     requestAnimationFrame(tick);
     return {tracks: () => tracks};
@@ -3257,16 +3255,17 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       const ox = off.getContext("2d", {willReadFrequently: true}), mag = new Float32Array(PW * PH), edge = ox.createImageData(PW, PH);
       const eCv = document.createElement("canvas"); eCv.width = PW; eCv.height = PH; const ex = eCv.getContext("2d");
       const M = {
-        thr:  {n: "01", name: "threshold", f: "grayscale(1) contrast(6) brightness(1.18)", box: "#12A150", line: "rgba(18,161,80,.6)", lab: "#0B3D20", ui: "#14151A"},
+        mono: {n: "01", name: "mono", f: "grayscale(1) contrast(1.35) brightness(1.06)", box: "#12A150", line: "rgba(18,161,80,.5)", lab: "#0B3D20", ui: "#14151A"},
+        thr:  {n: "05", name: "threshold", f: "grayscale(1) contrast(6) brightness(1.18)", box: "#12A150", line: "rgba(18,161,80,.6)", lab: "#0B3D20", ui: "#14151A"},
         inv:  {n: "02", name: "invert",    f: "grayscale(1) contrast(6) brightness(1.1) invert(1)", box: "#3DF58A", line: "rgba(61,245,138,.5)", lab: "#EFFFF4", ui: "#F1F2E4"},
         edge: {n: "03", name: "edge",      bg: "#FFFFFF", e: [43, 200, 105], box: "#0F8A43", line: "rgba(15,138,67,.5)", lab: "#0B3D20", ui: "#14151A"},
         red:  {n: "04", name: "contour",   bg: "#050505", e: [61, 245, 138], box: "#C9FF7A", line: "rgba(61,245,138,.45)", lab: "#EFFFF4", ui: "#F1F2E4"},
       };
-      const byState = {IDLE: "thr", LOCK: "inv", MACRO: "inv", SCAN: "edge", PROMPT: "red", CATCH: "red", DONE: "thr"};
-      let last = 0, fps = 0, fpsN = 0, fpsT = 0, cxS = .5, tr = {}, mode = "thr", flashT = 0;
+      const byState = {};   // 흑백 톤을 계속 유지(모드 전환 없음) — 다른 모드는 ?monmode= 로만
+      let last = 0, fps = 0, fpsN = 0, fpsT = 0, cxS = .5, tr = {}, mode = "mono", flashT = 0;
       // 관절 — [id, 크기(px), 이름]
-      const PTS = [[0, 30], [11, 22], [12, 22], [13, 16], [14, 16], [15, 12], [16, 12], [23, 26], [24, 26], [25, 18], [26, 18]];
-      const LAB = new Set(["p0", "p15", "p16", "p23", "p26", "h8"]);   // 라벨은 몇 개만 — 겹치지 않게
+      const PTS = [[0, 15], [11, 11], [12, 11], [13, 8], [14, 8], [15, 7], [16, 7], [23, 12], [24, 12], [25, 9], [26, 9]];   // 50%
+      const LAB = new Set(["p0", "p23", "h9"]);   // 라벨은 몇 개만 — 겹치지 않게
       const LINKS = [[15, 13], [13, 11], [11, 12], [12, 14], [14, 16], [11, 23], [23, 24], [24, 12], [23, 25], [24, 26], [0, 11], [0, 12]];
       function frame(now) {
         if (!document.documentElement.classList.contains("cam-on") || el.offsetWidth === 0) return;
@@ -3276,7 +3275,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
         if (cvm.width !== Math.round(Wd * dpr)) { cvm.width = Math.round(Wd * dpr); cvm.height = Math.round(Hd * dpr); }
         x.setTransform(dpr, 0, 0, dpr, 0, 0);
         const vw = vid.videoWidth, vh = vid.videoHeight; if (!vw) return;
-        const lm = C.lm, nm = M[QS.get("monmode")] ? QS.get("monmode") : !C.h ? "edge" : (byState[state] || "thr");   // ?monmode= 로 고정(점검용)
+        const lm = C.lm, nm = M[QS.get("monmode")] ? QS.get("monmode") : !C.h ? "edge" : (byState[state] || "mono");   // ?monmode= 로 고정(점검용)
         if (nm !== mode) { mode = nm; flashT = now; }
         const Mo = M[mode];
         // 사람을 따라 세로로 잘라 보기(4:5)
@@ -3293,23 +3292,21 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
           ex.putImageData(edge, 0, 0);
           x.fillStyle = Mo.bg; x.fillRect(0, 0, Wd, Hd); x.imageSmoothingEnabled = false; x.drawImage(eCv, 0, 0, Wd, Hd); x.imageSmoothingEnabled = true;
         }
-        if (now - flashT < 160) { x.fillStyle = "rgba(255,255,255,.55)"; x.fillRect(0, 0, Wd, Hd); }   // 모드가 바뀔 때 번쩍
         // 점 위치(거울) — 몸 + 손가락
         const P = (nx, ny) => ({x: Wd - (nx * vw - sx) / cw * Wd, y: ny * Hd});
         const pts = [];
         if (lm) for (const [i, sz] of PTS) if (V(lm[i])) pts.push({id: "p" + i, i, ...P(lm[i].x, lm[i].y), s: sz, v: lm[i].x});
-        if (C.hlm && C.roi) for (const j of [0, 4, 8, 12, 20]) { const q = C.hlm[j], r0 = C.roi; pts.push({id: "h" + j, ...P((r0.x + q.x * r0.s) / vw, (r0.y + q.y * r0.s) / vh), s: j ? 7 : 11, v: q.x}); }
+        if (C.hlm && C.roi) { const q = C.hlm[9], r0 = C.roi; pts.push({id: "h9", ...P((r0.x + q.x * r0.s) / vw, (r0.y + q.y * r0.s) / vh), s: 10, v: q.x}); }   // 손은 박스 하나
         // 부드럽게 + 움직임이 클수록 박스가 커진다
         const keep = {};
         for (const p of pts) { const t = tr[p.id] || {x: p.x, y: p.y, w: p.s, h: p.s * 1.25, ph: Math.random() * 3};
-          const sp = Math.hypot(p.x - t.x, p.y - t.y); t.x += (p.x - t.x) * .55; t.y += (p.y - t.y) * .55;
-          const big = p.s * (1 + Math.min(1.8, sp / 14)); t.w += (big - t.w) * .35; t.h += (big * (1.1 + .5 * Math.sin(t.ph)) - t.h) * .35; t.v = p.v; keep[p.id] = t; }
+          t.x += (p.x - t.x) * .8; t.y += (p.y - t.y) * .8;   // 몸에 바로 붙게(지연 최소)
+          t.w = p.s; t.h = Math.round(p.s * 1.15); t.v = p.v; keep[p.id] = t; }
         tr = keep;
         // 연결선: 뼈대 + 포인터 손에서 뻗는 긴 선(레퍼런스처럼 한 점으로 모이는)
-        x.strokeStyle = Mo.line; x.lineWidth = .9; x.beginPath();
+        x.strokeStyle = Mo.line; x.lineWidth = .8; x.beginPath();
         for (const [a2, b2] of LINKS) { const p = tr["p" + a2], q = tr["p" + b2]; if (p && q) { x.moveTo(p.x, p.y); x.lineTo(q.x, q.y); } }
         const hub = tr["p" + (C.hand || 16)];
-        if (hub) for (const id of ["p0", "p23", "p24", "p25", "p26", "h8"]) { const q = tr[id]; if (q) { x.moveTo(hub.x, hub.y); x.lineTo(q.x, q.y); } }
         x.stroke();
         let n = 0;
         for (const id in tr) { const t = tr[id]; n++;
@@ -3466,11 +3463,14 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       C.prevSt = state;
       if (state === "IDLE" || state === "LOCK") {
         if (F) {
-          // 앞뒤 → 줌: 손 크기 비율의 로그, ±6%는 무시, 2.4제곱으로 키운다
-          let e = Math.log(F.rS / F.r0); e = Math.sign(e) * Math.max(0, Math.abs(e) - .06);
-          const zt = clamp(F.z0 * Math.exp(e * 2.4), 1, 3), zk = 1 - Math.exp(-dt / .18), zPrev = zoom;
-          zoom += (zt - zoom) * zk; zoomTarget = zoom; applyScene();
-          if (Math.abs(zoom - zPrev) > .002 || Math.abs(zt - zoom) > .02) FX.zoomLED(zoom);
+          // 앞뒤 → 줌(조이스틱처럼): 쥔 자리보다 앞으로 밀고 있으면 점점 가까이, 당기고 있으면 점점 멀리, 제자리면 멈춤
+          //   손 크기 비율 ±7%는 무시 · 27%면 최고 속도(1초에 약 1.8배) — 깊이를 정확히 못 재도 편하게
+          let v = F.rS / F.r0 - 1; v = Math.sign(v) * Math.max(0, Math.abs(v) - .07);
+          const rate = clamp(v / .2, -1, 1), zPrev = zoom;
+          F.rt = (F.rt || 0) + (rate - (F.rt || 0)) * (1 - Math.exp(-dt / .12));   // 속도도 부드럽게
+          zoom = clamp(zoom * Math.exp(F.rt * .6 * dt), 1, 3); zoomTarget = zoom; applyScene();
+          const zt = zoom + F.rt;   // 문구용(다가가는 중 / 멀어지는 중)
+          if (Math.abs(zoom - zPrev) > .001) FX.zoomLED(zoom);
           // 비틀기 → 베젤이 손목을 따라 돈다, 55°를 넘기면 접사
           const tw = clamp(Math.abs(F.aS) / 55, 0, 1);
           if (!F.twisted) RING.rot = tw * MACRO_DEG * .92;
