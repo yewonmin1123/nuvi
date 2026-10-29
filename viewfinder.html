@@ -1898,10 +1898,34 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
   .camchip.busy .dot{background:#E0A93B}
   html.embed .camchip,html.embed .camcal{display:none!important}
   @media (pointer:coarse){ .camchip:not(.force){display:none} }
-  .camgo{position:fixed;left:50%;bottom:28px;z-index:60;transform:translateX(-50%);display:none;align-items:center;gap:8px;height:40px;padding:0 18px;border-radius:999px;
-    background:var(--lime,#C8D330);color:#1E1F1B;font:700 14px/1 var(--font,inherit);letter-spacing:-.02em}
-  .camgo.show{display:flex;animation:camgo 1s ease-in-out infinite alternate}
-  @keyframes camgo{to{transform:translateX(-50%) scale(1.06)}}
+  /* ---- 전시 화면: 카메라가 켜지면 1~2m 밖에서도 읽히게 — 렌즈를 키우고, 마우스용 패널은 접고, 큰 코치 한 줄 ---- */
+  html.cam-on,html.cam-on body{overflow:hidden}
+  html.cam-on .wrap{width:100vw!important}
+  html.cam-on .rail,html.cam-on .controls,html.cam-on footer,html.cam-on .msg-chip{display:none!important}
+  html.cam-on header{transform:scale(.72);transform-origin:50% 0;margin-bottom:-18px}
+  html.cam-on .scan-count{font-size:clamp(64px,8vh,104px)!important}
+  html.cam-on .cc-card{zoom:1.35}
+  html.cam-on .bezel{--size:min(calc(100vh - 250px), 62vw)!important;--size:min(calc(100dvh - 250px), 62vw)!important}
+  .camcoach{position:fixed;left:50%;bottom:26px;z-index:60;transform:translateX(-50%);display:none;align-items:center;gap:18px;
+    min-width:min(560px,92vw);max-width:92vw;padding:12px 26px 12px 12px;border-radius:999px;color:#F1F2E4;font-family:var(--font,inherit);
+    background:rgba(18,19,14,.62);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+  html.cam-on .camcoach{display:flex}
+  .camcoach .co-ic{width:64px;height:64px;border-radius:50%;flex:none;display:grid;place-items:center;background:rgba(255,255,255,.1);color:#F1F2E4;transition:background .3s,color .3s}
+  .camcoach .co-ic svg{width:34px;height:34px}
+  .camcoach .co-tx{display:grid;gap:5px;min-width:0}
+  .camcoach .co-tx b{font-size:clamp(22px,2.3vw,32px);font-weight:700;letter-spacing:-.035em;line-height:1.1}
+  .camcoach .co-tx span{font-size:clamp(13px,1.15vw,16px);color:#C9C6B2;letter-spacing:-.01em;transition:color .2s}
+  .camcoach .co-tx span.warn{color:#E8B44A}
+  .camcoach .co-dots{display:flex;gap:6px;margin-left:auto;padding-left:14px}
+  .camcoach .co-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18)}
+  .camcoach .co-dots i.done{background:rgba(200,211,48,.55)}
+  .camcoach .co-dots i.on{background:var(--lime,#C8D330);box-shadow:0 0 0 4px rgba(200,211,48,.18)}
+  .camcoach.act .co-ic{background:var(--lime,#C8D330);color:#1E1F1B}
+  .camcoach.go{background:rgba(200,211,48,.94);color:#1E1F1B;animation:coGo .9s ease-in-out infinite alternate}
+  .camcoach.go .co-ic{background:#1E1F1B;color:var(--lime,#C8D330)}
+  .camcoach.go .co-tx span{color:#3A3B2A}
+  .camcoach.go .co-dots i{background:rgba(30,31,27,.2)}.camcoach.go .co-dots i.done,.camcoach.go .co-dots i.on{background:#1E1F1B;box-shadow:none}
+  @keyframes coGo{to{transform:translateX(-50%) scale(1.04)}}
 
   /* ---- 실측 보정 ---- */
   .camcal{position:fixed;inset:0;z-index:80;display:none;place-items:center;padding:28px;background:rgba(10,11,8,.86);color:#F1F2E4;font-family:var(--font,inherit);
@@ -1942,9 +1966,25 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
   .cc-btns button[hidden]{display:none}
   .cc-note{font-size:11px;color:#8C8A78}
   @media (max-width:820px){ .cc-in{grid-template-columns:1fr} }
-  @media (prefers-reduced-motion:reduce){ .camgo.show{animation:none} }
+  @media (prefers-reduced-motion:reduce){ .camcoach.go{animation:none} }
+
+  /* ---- 렌즈 스캔 트래킹 ---- */
+  .trk-cv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+  /* ---- 관람객 트래킹 모니터 ---- */
+  .cammon{position:fixed;left:24px;top:50%;z-index:59;width:clamp(210px,17vw,300px);aspect-ratio:4/5;transform:translateY(-46%);display:none;
+    border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.14)}
+  html.cam-on .cammon{display:block}
+  html.cam-on .camchip .cv{display:none!important}
+  .cammon canvas{position:absolute;inset:0;width:100%;height:100%}
+  .cammon .mh,.cammon .mf{position:absolute;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;
+    font:600 9.5px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mc,#14151A);pointer-events:none}
+  .cammon .mh{top:10px}.cammon .mf{bottom:10px}
+  .cammon .mh i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#E5322D;margin-right:6px;vertical-align:0;animation:monRec 1.2s steps(2) infinite}
+  @keyframes monRec{50%{opacity:.2}}
+  @media (max-width:1100px){ html.cam-on .cammon{display:none} html.cam-on .camchip .cv{display:block!important} }
+  @media (prefers-reduced-motion:reduce){ .cammon .mh i{animation:none} }
 </style>
-<div class="camchip" id="camChip" role="button" tabindex="0" aria-label="카메라로 체험하기"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.4-2h7.8l1.4 2h2.2A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg></span><span class="cv"><video playsinline muted></video><canvas></canvas></span><span class="ct"><b><i class="dot"></i><span class="cl">카메라로 체험</span><span class="ck">K</span></b><span class="cg" id="camG">손 제스처</span><span class="cs" hidden>영상은 저장되지 않아요</span><button class="cb" id="camCalBtn" type="button">감도 보정 <span style="opacity:.5;margin-left:4px">L</span></button></span></div><div class="camgo" id="camGo">팔을 크게 휘둘러 잡아요!</div><div class="camcal" id="camCal" role="dialog" aria-label="모션 보정"><div class="cc-in"><div class="cc-view"><canvas width="640" height="480"></canvas><span class="cc-tag" id="ccTag">손을 찾는 중</span></div><div class="cc-side"><div class="cc-k">모션 보정 <span class="cc-steps" id="ccSteps"></span></div><h2 class="cc-t" id="ccT">카메라 앞 1~2m에 서 주세요</h2><p class="cc-d" id="ccD"></p><div class="cc-bar"><i id="ccBar"></i></div><div class="cc-meter"><span>손 속도 <span style="opacity:.6">(어깨폭/초 · 초록 선 = 스윙 기준)</span></span><div class="m" id="ccSp"><i></i><b></b><span>0.0</span></div></div><div class="cc-res" id="ccRes"></div><div class="cc-btns"><button class="pri" id="ccGo" hidden>저장하고 체험 시작</button><button id="ccAgain" hidden>다시 보정</button><button id="ccSkip">이 단계 건너뛰기</button><button id="ccClose">닫기</button></div><div class="cc-note">결과는 이 브라우저에만 저장돼요 · 카메라 영상은 저장하지 않아요</div></div></div></div>
+<div class="camchip" id="camChip" role="button" tabindex="0" aria-label="카메라로 체험하기"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.4-2h7.8l1.4 2h2.2A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg></span><span class="cv"><video playsinline muted></video><canvas></canvas></span><span class="ct"><b><i class="dot"></i><span class="cl">카메라로 체험</span><span class="ck">K</span></b><span class="cg" id="camG">손 제스처</span><span class="cs" hidden>영상은 저장되지 않아요</span><button class="cb" id="camCalBtn" type="button">감도 보정 <span style="opacity:.5;margin-left:4px">L</span></button></span></div><div class="camcoach" id="camCoach" aria-live="polite"><span class="co-ic" id="coIc"></span><span class="co-tx"><b id="coT"></b><span id="coS"></span></span><span class="co-dots" id="coDots"><i></i><i></i><i></i><i></i><i></i><i></i></span></div><div class="camcal" id="camCal" role="dialog" aria-label="모션 보정"><div class="cc-in"><div class="cc-view"><canvas width="640" height="480"></canvas><span class="cc-tag" id="ccTag">손을 찾는 중</span></div><div class="cc-side"><div class="cc-k">모션 보정 <span class="cc-steps" id="ccSteps"></span></div><h2 class="cc-t" id="ccT">카메라 앞 1~2m에 서 주세요</h2><p class="cc-d" id="ccD"></p><div class="cc-bar"><i id="ccBar"></i></div><div class="cc-meter"><span>손 속도 <span style="opacity:.6">(어깨폭/초 · 초록 선 = 스윙 기준)</span></span><div class="m" id="ccSp"><i></i><b></b><span>0.0</span></div></div><div class="cc-res" id="ccRes"></div><div class="cc-btns"><button class="pri" id="ccGo" hidden>저장하고 체험 시작</button><button id="ccAgain" hidden>다시 보정</button><button id="ccSkip">이 단계 건너뛰기</button><button id="ccClose">닫기</button></div><div class="cc-note">결과는 이 브라우저에만 저장돼요 · 카메라 영상은 저장하지 않아요</div></div></div></div><div class="cammon" id="camMon" aria-hidden="true"><canvas></canvas><div class="mh"><span><i></i>Motion tracking</span><span id="monN">00 blobs</span></div><div class="mf"><span id="monM">mode 01 / threshold</span><span id="monF">00 fps</span></div></div>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
@@ -2941,10 +2981,97 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     addEventListener("pointerdown", () => { const t = Date.now(); if (t - lastPing > 2000) { lastPing = t; try { parent.postMessage({nuvi:"vf-touch"}, "*"); } catch(e) {} } }, true);
   }
 
+  // ===== 모션 트래킹 공통: 소벨 윤곽 =====
+  function trkSobel(d, w, h, out) {   // d: RGBA, out: Float32Array(w*h) 밝기 기울기
+    const cch = trkSobel.c || (trkSobel.c = {}), g = cch[w * h] || (cch[w * h] = new Float32Array(w * h));
+    for (let i = 0, j = 0; i < g.length; i++, j += 4) g[i] = d[j] * .3 + d[j + 1] * .59 + d[j + 2] * .11;
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x, a = g[i - w - 1], b = g[i - w], c = g[i - w + 1], e = g[i - 1], f = g[i + 1], p = g[i + w - 1], q = g[i + w], r = g[i + w + 1];
+      const gx = c + 2 * f + r - a - 2 * e - p, gy = p + 2 * q + r - a - 2 * b - c;
+      out[i] = Math.abs(gx) + Math.abs(gy);
+    }
+    return g;
+  }
+  const trkF7 = v => (Math.abs(v) % 1).toFixed(7);
+  // 추적 박스 하나: 사각형 + X자 대각선 + 소수 라벨
+  function trkBox(x, bx, by, bw, bh, col, lab, labCol, sc = 1) {
+    x.strokeStyle = col; x.lineWidth = 1.1 * sc; x.strokeRect(bx, by, bw, bh);
+    x.globalAlpha *= .75; x.beginPath(); x.moveTo(bx, by); x.lineTo(bx + bw, by + bh); x.moveTo(bx + bw, by); x.lineTo(bx, by + bh); x.stroke(); x.globalAlpha /= .75;
+    if (lab) { x.fillStyle = labCol; x.font = `500 ${10.5 * sc}px ui-monospace,"SF Mono",Menlo,monospace`; x.fillText(lab, bx + bw + 3 * sc, by + 4 * sc); }
+  }
+
+  // ===== 렌즈 스캔 트래킹 — 렌즈에 보이는 영상을 실제로 분석 =====
+  const TRK = (() => {
+    const cvL = document.createElement("canvas"); cvL.className = "trk-cv"; scene.after(cvL);
+    const x = cvL.getContext("2d"), S = 200, off = document.createElement("canvas"); off.width = off.height = S;
+    const ox = off.getContext("2d", {willReadFrequently: true}), mag = new Float32Array(S * S);
+    const vEl = scene.querySelector("video"), sImg = scene.querySelector("img");
+    let a = 0, last = 0, tracks = [], seed = 0, dirty = false;
+    const want = () => state === "SCAN";
+    function src() {
+      if (vEl && vEl.readyState >= 2 && vEl.videoWidth && !scene.classList.contains("vfail")) return [vEl, vEl.videoWidth];
+      if (sImg && sImg.naturalWidth) return [sImg, sImg.naturalWidth];
+      return [null, 0];
+    }
+    function tick(now) {
+      requestAnimationFrame(tick);
+      a += ((want() ? 1 : 0) - a) * (want() ? .12 : .2);
+      if (a < .02) { if (dirty) { x.clearRect(0, 0, cvL.width, cvL.height); dirty = false; tracks = []; } return; }
+      if (now - last < 70) return; last = now;
+      const L = lens.clientWidth, dpr = Math.min(2, devicePixelRatio || 1);
+      if (cvL.width !== Math.round(L * dpr)) { cvL.width = cvL.height = Math.round(L * dpr); }
+      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, L, L); dirty = true;
+      const [img, iw] = src(); if (!img) return;
+      const s = zoom * viewScale(), half = L / 2 / s, k = iw / W;
+      let d;
+      try { ox.drawImage(img, (cam.x - half) * k, (cam.y - half) * k, 2 * half * k, 2 * half * k, 0, 0, S, S); d = ox.getImageData(0, 0, S, S).data; } catch (e) { return; }
+      const g = trkSobel(d, S, S, mag);
+      // 윤곽 문턱: 상위 11%
+      let mx = 0; for (let i = 0; i < mag.length; i++) if (mag[i] > mx) mx = mag[i];
+      const hist = new Uint32Array(64); for (let i = 0; i < mag.length; i++) hist[Math.min(63, mag[i] / (mx || 1) * 64 | 0)]++;
+      let acc = 0, th = mx; for (let b = 63; b >= 0; b--) { acc += hist[b]; if (acc > mag.length * .085) { th = b / 64 * mx; break; } }
+      const u = L / S;
+      x.globalAlpha = a * .55; x.fillStyle = "#7DF2DC";
+      for (let y = 1; y < S - 1; y++) for (let xx = 1; xx < S - 1; xx++) { const i = y * S + xx; if (mag[i] > th) x.fillRect(xx * u, y * u, u * .62, u * .62); }
+      // 덩어리: 16×16 칸마다 윤곽 점의 무게중심 · 퍼짐을 재고, 점수 높은 칸부터 겹치지 않게 골라 박스로 (격자 티 안 나게)
+      const N = 16, cs = S / N, cells = [];
+      for (let cy = 0; cy < N; cy++) for (let cx = 0; cx < N; cx++) {
+        let e = 0, dk = 0, sx = 0, sy = 0, sxx = 0, syy = 0;
+        for (let y = cy * cs | 0; y < (cy + 1) * cs; y++) for (let xx = cx * cs | 0; xx < (cx + 1) * cs; xx++) { const i = y * S + xx;
+          if (mag[i] > th) { e++; sx += xx; sy += y; sxx += xx * xx; syy += y * y; } if (g[i] < 70) dk++; }
+        if (e < 4) continue;
+        const mx2 = sx / e, my2 = sy / e;
+        cells.push({cx, cy, v: e / (cs * cs) + dk / (cs * cs) * .3, x: mx2, y: my2, sdx: Math.sqrt(Math.max(1, sxx / e - mx2 * mx2)), sdy: Math.sqrt(Math.max(1, syy / e - my2 * my2))});
+      }
+      cells.sort((p, q) => q.v - p.v);
+      const top = [];
+      for (const c of cells) { if (top.length >= 8) break; if (top.some(t => Math.abs(t.cx - c.cx) < 2.2 && Math.abs(t.cy - c.cy) < 2.2)) continue; top.push(c); }
+      const blobs = top.map(c => { const bw = (c.sdx * 2.6 + cs * .5) * u * (1 + c.v), bh = (c.sdy * 2.6 + cs * .5) * u * (1 + c.v);
+        return {x: c.x * u - bw / 2, y: c.y * u - bh / 2, w: bw, h: bh, v: c.v}; });
+      // 이전 박스와 짝지어 부드럽게 — 추적되는 느낌
+      const nt = [];
+      for (const b of blobs) {
+        let best = null, bd = 1e9; for (const t of tracks) { const dd = Math.hypot(t.x - b.x, t.y - b.y); if (dd < bd && !t.used) { bd = dd; best = t; } }
+        if (best && bd < L * .2) { best.used = 1; best.x += (b.x - best.x) * .5; best.y += (b.y - best.y) * .5; best.w += (b.w - best.w) * .5; best.h += (b.h - best.h) * .5; best.v = b.v; nt.push(best); }
+        else nt.push(Object.assign({id: ++seed, ph: Math.random()}, b));
+      }
+      nt.forEach(t => t.used = 0); tracks = nt;
+      // 연결선 → 박스 → 라벨
+      const tg = toScreen(B); x.globalAlpha = a * .55; x.strokeStyle = "#F1F2E4"; x.lineWidth = .8;
+      const cs2 = tracks.map(t => ({x: t.x + t.w / 2, y: t.y + t.h / 2})).sort((p, q) => p.x - q.x);
+      x.beginPath(); cs2.forEach((p, i) => i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)); x.stroke();
+      x.beginPath(); cs2.slice(0, 4).forEach(p => { x.moveTo(tg.x, tg.y); x.lineTo(p.x, p.y); }); x.stroke();
+      x.globalAlpha = a;
+      tracks.forEach((t, i) => trkBox(x, t.x, t.y, t.w, t.h, "#E6F04A", i < 5 ? trkF7(t.v * 1.7 + t.ph + now / 9e4) : "", "#F7F8EC"));
+    }
+    requestAnimationFrame(tick);
+    return {tracks: () => tracks};
+  })();
+
   // ===== 카메라 모션 모드 v2 (몸 + 손 제스처 + 실측 보정) =====
   const CAM = (() => {
     const chip = $("camChip"), vid = chip.querySelector("video"), cv = chip.querySelector("canvas"), cx2 = cv.getContext("2d");
-    const lab = chip.querySelector(".cl"), sub = chip.querySelector(".cs"), go = $("camGo"), gTag = $("camG");
+    const lab = chip.querySelector(".cl"), sub = chip.querySelector(".cs"), gTag = $("camG");
     const MPV = "0.10.35", CDN = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MPV}`, MCDN = "https://storage.googleapis.com/mediapipe-models";
     const C = { on:false, busy:false, pose:null, gest:null, stream:null, raf:0, lastVT:-1, seenAt:0, hist:[], hand:null, sm:null,
                 still:0, lastT:0, actT:0, swingAt:0, shakeAt:0, gAt:0, lm:null, sw:0, roi:null, hlm:null, sp:0, h:null,
@@ -2960,6 +3087,24 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     for (const k of Object.keys(DEF)) { const v = parseFloat(QS.get(k)); if (isFinite(v)) K[k] = v; }
     const DEBUG = QS.has("debug");
     const say = (t, s) => { lab.textContent = t; if (s !== undefined) { sub.hidden = !s; sub.textContent = s || ""; } };
+    // ---- 코치: 지금 할 동작 하나만 크게 (칩은 인식 상태만) ----
+    const IC = {"person": "<circle cx=\"12\" cy=\"7\" r=\"3.2\"/><path d=\"M5 20.5c.6-4 3.4-6.5 7-6.5s6.4 2.5 7 6.5\"/>", "palm": "<path d=\"M7.5 12.5V6.8a1.4 1.4 0 0 1 2.8 0v4.7M10.3 11V5a1.4 1.4 0 0 1 2.8 0v6M13.1 11V6a1.4 1.4 0 0 1 2.8 0v6.2M15.9 12V8.6a1.4 1.4 0 0 1 2.8 0v5.6c0 3.7-2.6 6.3-6.2 6.3-2.6 0-4.1-1.3-5.4-3.4L5 14.2a1.4 1.4 0 0 1 2.4-1.4l.1.2\"/>", "fist": "<path d=\"M7 10.5V9a1.6 1.6 0 0 1 3.2 0v1.2M10.2 10V8.4a1.6 1.6 0 0 1 3.2 0V10M13.4 10V8.9a1.6 1.6 0 0 1 3.2 0V11M16.6 11a1.6 1.6 0 0 1 2.4 1.4v1.4c0 3.6-2.7 6.2-6.4 6.2H12c-3.1 0-5.4-2.2-5.4-5.3v-2.4c0-1.1.9-1.9 2-1.8l3 .3a1.5 1.5 0 0 1-.2 3H9.6\"/>", "hold": "<rect x=\"7\" y=\"5.5\" width=\"3.4\" height=\"13\" rx=\"1.2\"/><rect x=\"13.6\" y=\"5.5\" width=\"3.4\" height=\"13\" rx=\"1.2\"/>", "swing": "<path d=\"M4 15a8 8 0 0 1 13.5-5.8\"/><path d=\"M18 5v4.5h-4.5\"/><path d=\"M9 19.5l1.6-3.2M13 20.5l.7-3.4\"/>", "thumb": "<path d=\"M7.5 10.5v9H5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM7.5 10.5l3.6-6.3a1.7 1.7 0 0 1 3.1 1.3l-.9 3.8h4.9a2 2 0 0 1 2 2.4l-1.3 6.2a2.5 2.5 0 0 1-2.4 1.9H7.5\"/>", "victory": "<path d=\"M9.6 12 7.3 4.6a1.4 1.4 0 0 1 2.7-.8l2.2 6.8 1.4-7a1.4 1.4 0 0 1 2.8.5l-1.3 7.6\"/><path d=\"M8.3 12.4a1.5 1.5 0 0 1 2.9-.6M11.2 11.8l.3-.2a1.5 1.5 0 0 1 2.1 1.9M13.6 13.5a1.5 1.5 0 0 1 2.6 1.2c-.4 3.4-2.6 5.8-5.6 5.8-2.6 0-4.7-1.8-5-4.4l-.3-2.3a1.5 1.5 0 0 1 2.9-.6\"/>", "net": "<circle cx=\"12\" cy=\"12\" r=\"7.5\"/><path d=\"M12 4.5v15M4.5 12h15M6.7 6.7l10.6 10.6M17.3 6.7 6.7 17.3\"/>", "star": "<path d=\"m12 4 2.3 4.9 5.2.6-3.9 3.6 1.1 5.2L12 15.7l-4.7 2.6 1.1-5.2-3.9-3.6 5.2-.6z\"/>"};
+    const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${IC[k] || ""}</svg>`;
+    const coach = (() => { const el = $("camCoach"), ic = $("coIc"), t = $("coT"), s = $("coS"), dots = [...$("coDots").children];
+      let key = "", warnT = 0, sNow = "";
+      const STEP = {IDLE:0, LOCK:1, MACRO:2, SCAN:3, PROMPT:4, CATCH:4, DONE:5};
+      return {
+        set(k, icon, title, subT, opt = {}) {
+          if (k !== key) { key = k; ic.innerHTML = svg(icon); t.textContent = title;
+            el.classList.toggle("act", !!opt.act); el.classList.toggle("go", !!opt.go);
+            if (!reduced) G.fromTo(el, {y: 6, opacity: .6}, {y: 0, opacity: 1, duration: .35, ease: "power3.out", clearProps: "y,opacity"}); }
+          sNow = subT; if (performance.now() > warnT) { s.textContent = subT; s.classList.remove("warn"); }
+          const n = opt.step === undefined ? STEP[state] : opt.step;
+          dots.forEach((d, i) => d.className = n < 0 ? "" : i < n ? "done" : i === n ? "on" : "");
+        },
+        warn(msg) { warnT = performance.now() + 1700; s.textContent = msg; s.classList.add("warn"); },
+        reset() { key = ""; }
+      }; })();
 
     // ---- 모델: ① 파일에 품은 것 ② 옆 mp/ 폴더 ③ CDN ----
     const blobURL = async (id, type) => { const el = document.getElementById(id); if (!el) return null;   // base64(gzip) → Blob URL
@@ -2997,6 +3142,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
         say("모션 인식 준비 중…");
         if (!C.pose) Object.assign(C, await loadModels());
         C.on = true; C.busy = false; chip.classList.remove("busy"); C.seenAt = 0;
+        document.documentElement.classList.add("cam-on"); scrollTo(0, 0); coach.reset(); dispatchEvent(new Event("resize")); setTimeout(() => { dispatchEvent(new Event("resize")); applyScene(); }, 60);
         say("카메라 앞에 서 주세요", saved ? "보정값 사용 중 · 영상은 저장되지 않아요" : "감도 보정을 한 번 해 주세요 · 영상은 저장되지 않아요");
         cv.width = 296; cv.height = Math.round(296 * vid.videoHeight / Math.max(1, vid.videoWidth)) || 222;
         chip.querySelector(".cv").style.aspectRatio = `${vid.videoWidth} / ${vid.videoHeight}`;
@@ -3011,7 +3157,8 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     function stop() {
       C.on = false; C.busy = false; cancelAnimationFrame(C.raf);
       if (C.stream) C.stream.getTracks().forEach(t => t.stop()); C.stream = null; vid.srcObject = null;
-      chip.classList.remove("on", "busy", "seen"); say("카메라로 체험", null); go.classList.remove("show");
+      chip.classList.remove("on", "busy", "seen"); say("카메라로 체험", null);
+      if (document.documentElement.classList.contains("cam-on")) { document.documentElement.classList.remove("cam-on"); dispatchEvent(new Event("resize")); setTimeout(() => { dispatchEvent(new Event("resize")); applyScene(); }, 60); }
       if (CAL.on) CAL.close();
       if (state === "IDLE") setMsg("렌즈를 드래그해서 주변을 둘러보세요");
     }
@@ -3057,6 +3204,78 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     const held = (name, ms) => C.g.stable === name && performance.now() - C.g.stableAt >= ms;
     const once = (name, ms) => { if (held(name, ms) && C.g.fired !== name) { C.g.fired = name; return true; } return false; };
 
+
+    // ===== 관람객 트래킹 모니터 =====
+    const MON = (() => {
+      const el = $("camMon"), cvm = el.querySelector("canvas"), x = cvm.getContext("2d");
+      const nEl = $("monN"), mEl = $("monM"), fEl = $("monF");
+      const PW = 150, PH = 188, off = document.createElement("canvas"); off.width = PW; off.height = PH;
+      const ox = off.getContext("2d", {willReadFrequently: true}), mag = new Float32Array(PW * PH), edge = ox.createImageData(PW, PH);
+      const eCv = document.createElement("canvas"); eCv.width = PW; eCv.height = PH; const ex = eCv.getContext("2d");
+      const M = {
+        thr:  {n: "01", name: "threshold", f: "grayscale(1) contrast(6) brightness(1.18)", box: "#2B2FE3", line: "rgba(20,21,26,.6)", lab: "#14151A", ui: "#14151A"},
+        inv:  {n: "02", name: "invert",    f: "grayscale(1) contrast(6) brightness(1.1) invert(1)", box: "#E6F04A", line: "rgba(241,242,228,.55)", lab: "#F7F8EC", ui: "#F1F2E4"},
+        edge: {n: "03", name: "edge",      bg: "#FFFFFF", e: [91, 231, 208], box: "#2B2FE3", line: "rgba(20,21,26,.55)", lab: "#14151A", ui: "#14151A"},
+        red:  {n: "04", name: "contour",   bg: "#050505", e: [229, 50, 45], box: "#E6F04A", line: "rgba(241,242,228,.5)", lab: "#F7F8EC", ui: "#F1F2E4"},
+      };
+      const byState = {IDLE: "thr", LOCK: "inv", MACRO: "inv", SCAN: "edge", PROMPT: "red", CATCH: "red", DONE: "thr"};
+      let last = 0, fps = 0, fpsN = 0, fpsT = 0, cxS = .5, tr = {}, mode = "thr", flashT = 0;
+      // 관절 — [id, 크기(px), 이름]
+      const PTS = [[0, 30], [11, 22], [12, 22], [13, 16], [14, 16], [15, 12], [16, 12], [23, 26], [24, 26], [25, 18], [26, 18]];
+      const LAB = new Set(["p0", "p15", "p16", "p23", "p26", "h8"]);   // 라벨은 몇 개만 — 겹치지 않게
+      const LINKS = [[15, 13], [13, 11], [11, 12], [12, 14], [14, 16], [11, 23], [23, 24], [24, 12], [23, 25], [24, 26], [0, 11], [0, 12]];
+      function frame(now) {
+        if (!document.documentElement.classList.contains("cam-on") || el.offsetWidth === 0) return;
+        if (now - last < 50) return; last = now;
+        fpsN++; if (now - fpsT > 1000) { fps = fpsN; fpsN = 0; fpsT = now; }
+        const dpr = Math.min(2, devicePixelRatio || 1), Wd = el.clientWidth, Hd = el.clientHeight;
+        if (cvm.width !== Math.round(Wd * dpr)) { cvm.width = Math.round(Wd * dpr); cvm.height = Math.round(Hd * dpr); }
+        x.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const vw = vid.videoWidth, vh = vid.videoHeight; if (!vw) return;
+        const lm = C.lm, nm = M[QS.get("monmode")] ? QS.get("monmode") : !C.h ? "edge" : (byState[state] || "thr");   // ?monmode= 로 고정(점검용)
+        if (nm !== mode) { mode = nm; flashT = now; }
+        const Mo = M[mode];
+        // 사람을 따라 세로로 잘라 보기(4:5)
+        const cw = Math.min(vw, vh * Wd / Hd);
+        if (lm && V(lm[11]) && V(lm[12])) cxS += ((lm[11].x + lm[12].x) / 2 - cxS) * .15;
+        const sx = clamp(cxS * vw - cw / 2, 0, vw - cw);
+        const drawMir = (ctx, w, h, f) => { ctx.save(); if (f) ctx.filter = f; ctx.translate(w, 0); ctx.scale(-1, 1); ctx.drawImage(vid, sx, 0, cw, vh, 0, 0, w, h); ctx.restore(); };
+        if (Mo.f) { x.fillStyle = "#000"; x.fillRect(0, 0, Wd, Hd); drawMir(x, Wd, Hd, Mo.f); }
+        else {
+          drawMir(ox, PW, PH); const d = ox.getImageData(0, 0, PW, PH).data; trkSobel(d, PW, PH, mag);
+          let mx = 0; for (let i = 0; i < mag.length; i++) if (mag[i] > mx) mx = mag[i];
+          const th = mx * .22, E = edge.data, [r, g, b] = Mo.e;
+          for (let i = 0, j = 0; i < mag.length; i++, j += 4) { const on = mag[i] > th; E[j] = r; E[j + 1] = g; E[j + 2] = b; E[j + 3] = on ? Math.min(255, 120 + mag[i] / mx * 400) : 0; }
+          ex.putImageData(edge, 0, 0);
+          x.fillStyle = Mo.bg; x.fillRect(0, 0, Wd, Hd); x.imageSmoothingEnabled = false; x.drawImage(eCv, 0, 0, Wd, Hd); x.imageSmoothingEnabled = true;
+        }
+        if (now - flashT < 160) { x.fillStyle = "rgba(255,255,255,.55)"; x.fillRect(0, 0, Wd, Hd); }   // 모드가 바뀔 때 번쩍
+        // 점 위치(거울) — 몸 + 손가락
+        const P = (nx, ny) => ({x: Wd - (nx * vw - sx) / cw * Wd, y: ny * Hd});
+        const pts = [];
+        if (lm) for (const [i, sz] of PTS) if (V(lm[i])) pts.push({id: "p" + i, i, ...P(lm[i].x, lm[i].y), s: sz, v: lm[i].x});
+        if (C.hlm && C.roi) for (const j of [0, 4, 8, 12, 20]) { const q = C.hlm[j], r0 = C.roi; pts.push({id: "h" + j, ...P((r0.x + q.x * r0.s) / vw, (r0.y + q.y * r0.s) / vh), s: j ? 7 : 11, v: q.x}); }
+        // 부드럽게 + 움직임이 클수록 박스가 커진다
+        const keep = {};
+        for (const p of pts) { const t = tr[p.id] || {x: p.x, y: p.y, w: p.s, h: p.s * 1.25, ph: Math.random() * 3};
+          const sp = Math.hypot(p.x - t.x, p.y - t.y); t.x += (p.x - t.x) * .55; t.y += (p.y - t.y) * .55;
+          const big = p.s * (1 + Math.min(1.8, sp / 14)); t.w += (big - t.w) * .35; t.h += (big * (1.1 + .5 * Math.sin(t.ph)) - t.h) * .35; t.v = p.v; keep[p.id] = t; }
+        tr = keep;
+        // 연결선: 뼈대 + 포인터 손에서 뻗는 긴 선(레퍼런스처럼 한 점으로 모이는)
+        x.strokeStyle = Mo.line; x.lineWidth = .9; x.beginPath();
+        for (const [a2, b2] of LINKS) { const p = tr["p" + a2], q = tr["p" + b2]; if (p && q) { x.moveTo(p.x, p.y); x.lineTo(q.x, q.y); } }
+        const hub = tr["p" + (C.hand || 16)];
+        if (hub) for (const id of ["p0", "p23", "p24", "p25", "p26", "h8"]) { const q = tr[id]; if (q) { x.moveTo(hub.x, hub.y); x.lineTo(q.x, q.y); } }
+        x.stroke();
+        let n = 0;
+        for (const id in tr) { const t = tr[id]; n++;
+          trkBox(x, t.x - t.w / 2, t.y - t.h / 2, t.w, t.h, Mo.box, LAB.has(id) ? trkF7(t.v + t.ph * .1) : "", Mo.lab, .9); }
+        el.style.setProperty("--mc", Mo.ui);
+        nEl.textContent = String(n).padStart(2, "0") + " blobs"; mEl.textContent = `mode ${Mo.n} / ${Mo.name}`; fEl.textContent = String(fps).padStart(2, "0") + " fps";
+      }
+      return {frame};
+    })();
+
     function loop() {
       if (!C.on) return;
       C.raf = requestAnimationFrame(loop);
@@ -3069,6 +3288,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       C.roi = C.lm ? roiFrom(C.lm, W0, H0) : null;
       if (now - C.gAt > 60) { C.gAt = now; runGesture(now); }   // 제스처는 약 15fps
       if (CAL.on) CAL.frame(now);
+      MON.frame(now);
     }
 
     // ---- 자세 → 손 위치 · 속도 ----
@@ -3081,6 +3301,8 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       const sx = (lm[11].x - lm[12].x) * asp, sy = lm[11].y - lm[12].y, sw = Math.max(.04, Math.hypot(sx, sy));
       C.sw = sw / asp;   // 영상 폭 기준 어깨폭
       const cx = (lm[11].x + lm[12].x) / 2, cy = (lm[11].y + lm[12].y) / 2;
+      C.th = C.th || []; C.th.push({x: cx * asp / sw, y: cy / sw, t: now}); while (C.th.length && now - C.th[0].t > 300) C.th.shift();
+      { const a0 = C.th.find(q => now - q.t <= 200) || C.th[0]; C.tsp = Math.hypot(cx * asp / sw - a0.x, cy / sw - a0.y) / Math.max(.05, (now - a0.t) / 1000); }
       const rel = i => V(lm[i]) ? {x: -(lm[i].x - cx) * asp / sw, y: (lm[i].y - cy) / sw, i} : null;   // 거울처럼 — 오른쪽으로 뻗으면 오른쪽
       const L = rel(15), R = rel(16);
       let h = C.hand === 15 ? L : C.hand === 16 ? R : null;
@@ -3102,16 +3324,24 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       if (!CAL.on) act(h, C.sp, h.y < 1.4, dt, now);
     }
     function lost(now) {
-      chip.classList.remove("seen"); C.seenAt = 0; C.sm = null; C.hist.length = 0; C.h = null; C.sp = 0;
-      if (C.on && !CAL.on) say("카메라 앞에 서 주세요");
-      if (state === "DONE" && C.actT && now - C.actT > 20000) { C.actT = 0; $("againBtn").click(); }   // 아무도 없으면 처음으로
+      chip.classList.remove("seen"); C.seenAt = 0; C.sm = null; C.hist.length = 0; C.h = null; C.sp = 0; C.th = [];
+      if (C.on && !CAL.on) { say("카메라 앞에 서 주세요");
+        coach.set("nobody", "person", "카메라 앞에 서 주세요", "1~2m 떨어져서 손을 들어 보세요", {step: -1}); }
+      // 사람이 떠나면 다음 사람을 위해 처음으로 (결과 20초 · 진행 중 25초)
+      const away = C.actT ? now - C.actT : 0;
+      if ((state === "DONE" && away > 20000) || (["LOCK", "MACRO", "SCAN", "PROMPT"].includes(state) && away > 25000)) { C.actT = 0; $("againBtn").click(); }
     }
     const swung = (h, now, win) => { const a0 = win[0]; return C.sp > K.swing && a0 && Math.hypot(h.x - a0.x, h.y - a0.y) > K.travel; };
     function act(h, sp, raised, dt, now) {
-      const still = sp < K.still, fist = held("Closed_Fist", 0);
+      const still = sp < K.still, fist = held("Closed_Fist", 0), GS = !!C.gest;
       C.still = still ? C.still + dt : 0;
+      if (state !== C.st) { C.st = state; C.stAt = now; }   // 지금 단계에 머문 시간
+      const inSt = now - C.stAt;
+      say(C.g.stable !== "None" ? "모션 인식 중 · " + (GK[C.g.stable] || "") : "모션 인식 중");
       if (state === "IDLE" || state === "LOCK") {
-        say(state === "LOCK" ? (C.gest ? "주먹을 쥐면 다가가요" : "그대로 멈춰요") : "손으로 렌즈를 움직여요");
+        if (state === "IDLE") coach.set("idle" + (raised ? 1 : 0), "palm", raised ? "손으로 렌즈를 움직여요" : "손을 들어 보세요", raised ? "사슴벌레를 찾아 렌즈 가운데에 담아요" : "손을 든 쪽으로 렌즈가 따라와요");
+        else coach.set("lock" + (fist ? 1 : 0), "fist", fist ? "그대로 꽉 — 다가가는 중" : GS ? "찾았다! 주먹을 쥐어요" : "찾았다! 그대로 멈춰요",
+                       fist ? "주먹을 쥐고 있으면 접사로 바뀌어요" : inSt > 4000 ? "주먹이 어려우면 손을 멈춰도 돼요" : GS ? "주먹을 쥐면 가까이 다가가요" : "멈추면 가까이 다가가요", {act: fist});
         if (raised && !tween && !RING.drag) {
           if (!(state === "LOCK" && fist)) {   // 주먹 = 붙잡기 — 렌즈를 멈춘다
             const nx = clamp((C.sm.x - (K.rx0 + K.rx1) / 2) / ((K.rx1 - K.rx0) / 2 * .85), -1, 1);
@@ -3121,37 +3351,39 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
             const k = 1 - Math.pow(.0009, dt);
             cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
           }
-          if (state === "LOCK" && (fist || still)) zoom = Math.min(2.0, zoom + dt * (fist ? 1.3 : .6));   // 주먹이면 더 빨리
+          if (state === "LOCK" && (fist || still)) zoom = Math.min(2.0, zoom + dt * (fist ? 1.3 : .4));   // 주먹이 빠른 길, 가만히는 느린 길
           else if (state === "IDLE" && zoom > 1) zoom = Math.max(1, zoom - dt * .45);
           zoomTarget = zoom; applyScene();
         }
-        if (state === "LOCK" && zoom >= 1.995 && (held("Closed_Fist", 400) || C.still > .7) && canMacro()) { C.still = 0; C.g.fired = "Closed_Fist"; setMacro(true); }
+        if (state === "LOCK" && zoom >= 1.995 && (held("Closed_Fist", 400) || C.still > 1.0) && canMacro()) { C.still = 0; C.g.fired = "Closed_Fist"; setMacro(true); }
       } else if (state === "MACRO") {
-        say(C.gest ? "주먹을 쥐면 캡쳐해요" : "가만히… 곧 캡쳐해요");
+        coach.set("macro", "fist", GS ? "한 번 더 주먹!" : "가만히 — 사진을 찍어요", GS ? "손을 폈다가 다시 쥐면 사진을 찍어요" : "조금만 그대로 있어요", {act: fist});
         if (once("Closed_Fist", 500) || C.still > 1.4) { C.still = 0; capBtn.click(); }
       } else if (state === "SCAN") {
-        say("움직이면 안 돼요!");
-        if (sp > K.shake && now - C.shakeAt > 700) { C.shakeAt = now; scanShake(); }
+        coach.set("scan", "hold", "움직이지 마세요!", "팔은 내려도 괜찮아요 — 몸만 그대로");
+        // 흔들림 = 몸이 움직이거나, 든 손을 세게 휘저을 때 (팔을 천천히 내리는 건 괜찮다)
+        if (((C.tsp || 0) > Math.max(.8, K.still) || (sp > K.shake * 1.3 && raised)) && now - C.shakeAt > 700) { C.shakeAt = now; scanShake(); }
       } else if (state === "PROMPT") {
-        say("지금! 팔을 휘둘러요"); go.classList.add("show");
+        coach.set("prompt", "swing", "지금! 팔을 휘둘러요", inSt > 7000 ? "더 크게! 그물을 던지듯 휙" : "그물을 던져 잡아요", {go: true});
         const win = C.hist.filter(q => now - q.t <= 220);
         if (swung(h, now, win) && now - C.swingAt > 800) {
-          C.swingAt = now; go.classList.remove("show");
+          C.swingAt = now;
           const Ls = lens.clientWidth, pts = win.map(q => ({x: Ls / 2 + q.x / 2.2 * Ls * .5, y: Ls / 2 + (q.y + .4) / 2 * Ls * .5, t: q.t}));
           swing(pts);
         }
       } else if (state === "CATCH") {
-        go.classList.remove("show");
         if (catchConfirm.classList.contains("show")) {
-          say(C.gest ? "엄지척 하면 도감에 쏙" : "한 번 더 휘두르면 도감에 쏙");
+          coach.set("confirm", GS ? "thumb" : "swing", GS ? "잡았다! 엄지척" : "잡았다! 한 번 더 휙", "도감에 넣어요", {act: true});
           if ((once("Thumb_Up", 300) || (sp > K.swing && now - C.swingAt > 900))) { C.swingAt = now; ccAddBtn.click(); }
-        }
+        } else if (morph.classList.contains("show")) coach.set("morph", "star", "도감에 기록하는 중…", "어떤 친구로 변할까요?");
+        else coach.set("netting", "net", "그물이 날아가요!", "", {act: true});
       } else if (state === "DONE") {
-        say(C.gest ? "브이 하면 다시 탐험해요" : "휘두르면 다시 탐험해요");
-        if (now - C.swingAt > 3500 && (once("Victory", 400) || sp > K.swing)) { C.swingAt = now; $("againBtn").click(); }
+        const ready = inSt > 6000;   // 결과(퍼펫)를 충분히 보고 나서
+        coach.set("done" + (ready ? 1 : 0), ready ? (GS ? "victory" : "swing") : "star", ready ? (GS ? "브이 하면 다시 탐험" : "휘두르면 다시 탐험") : "새 친구를 만났어요!",
+                  ready ? "다음 친구를 찾으러 가요" : "도감에 쏙 들어갔어요");
+        if (ready && (once("Victory", 400) || (sp > K.swing && now - C.swingAt > 1500))) { C.swingAt = now; $("againBtn").click(); }
       }
     }
-
     // ---- 그리기: 어깨·팔 선 + 손목 점 + 손 확대 영역 + 손가락 ----
     function draw(x, w, h, lm, full) {
       x.clearRect(0, 0, w, h);
@@ -3192,7 +3424,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       function open() {
         if (!C.on) { start().then(() => C.on && open()); return; }
         const vw = vid.videoWidth || 640, vh = vid.videoHeight || 480; cvv.width = 640; cvv.height = Math.round(640 * vh / vw); el.querySelector(".cc-view").style.aspectRatio = `${vw} / ${vh}`;
-        on = true; el.classList.add("on"); go.classList.remove("show"); for (const k in R) delete R[k];
+        on = true; el.classList.add("on"); for (const k in R) delete R[k];
         begin(0);
       }
       function close() { on = false; el.classList.remove("on"); }
@@ -3284,7 +3516,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
         res.classList.add("on"); bGo.hidden = bAgain.hidden = false; bSkip.hidden = true;
       }
       bGo.onclick = () => { if (K2) { Object.assign(K, K2); saved = {k: K2, at: Date.now()}; try { localStorage.setItem(LS, JSON.stringify(saved)); } catch (e) {} }
-        close(); say("손으로 렌즈를 움직여요", "보정값 사용 중 · 영상은 저장되지 않아요"); };
+        close(); say("모션 인식 중", "보정값 사용 중 · 영상은 저장되지 않아요"); };
       bAgain.onclick = () => { for (const k in R) delete R[k]; begin(0); };
       bSkip.onclick = () => { const s = S[i]; if (s && s.g) R[s.id] = {ok:false, conf:0}; next(); };
       bClose.onclick = close;
@@ -3310,10 +3542,10 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
                 "잡았습니다!": () => C.gest ? "잡았습니다! 엄지척 하면 도감에 쏙" : "잡았습니다! 한 번 더 휘두르면 도감에 쏙"};
     const text = t => { const v = C.on && CT[t]; return v ? (typeof v === "function" ? v() : v) : t; };
     if (QS.has("cam") || QS.has("calib") || location.hash === "#cam") { chip.classList.add("force"); setTimeout(start, 600); }
-    return {start, stop, feed, setG, on: () => C.on, text, c: C, k: K, cal: CAL};
+    return {start, stop, feed, setG, on: () => C.on, text, c: C, k: K, cal: CAL, warn: m => coach.warn(m)};
   })();
-  { const _sm = setMsg; setMsg = (t, cls) => _sm(CAM.text(t), cls); }
-  window.NUVI_VF = {cam:CAM, view:()=>({x:cam.x,y:cam.y,zoom}), state:()=>state, ring:RING, F, swing, pup:()=>pup, macro:()=>macro, zoom:()=>zoom};
+  { const _sm = setMsg; setMsg = (t, cls) => { _sm(CAM.text(t), cls); if (CAM.on() && cls === "alert" && /^(흔들렸어요|카메라|먼저|대상을)/.test(t)) CAM.warn(CAM.text(t)); }; }
+  window.NUVI_VF = {trk:TRK, cam:CAM, view:()=>({x:cam.x,y:cam.y,zoom}), state:()=>state, ring:RING, F, swing, pup:()=>pup, macro:()=>macro, zoom:()=>zoom};
 
   setMsg("렌즈를 드래그해서 주변을 둘러보세요");
   sizeFX();
