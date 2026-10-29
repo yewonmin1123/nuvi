@@ -3051,7 +3051,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     const GK = {Closed_Fist:"주먹", Open_Palm:"손바닥", Thumb_Up:"엄지척", Victory:"브이", Pointing_Up:"검지", Thumb_Down:"엄지 아래", ILoveYou:"사랑해", None:"—"};
 
     // ---- 감도: 기본값 ← 보정 저장값 ← 주소(?swing=3.5 …) 순으로 덮는다 (단위: 어깨폭, 어깨폭/초) ----
-    const DEF = {swing:4.2, travel:1.0, still:.9, shake:2.4, gconf:.55, rx0:-2.1, rx1:2.1, ry0:-2.4, ry1:1.2};
+    const DEF = {swing:4.2, travel:1.0, still:.9, shake:2.4, gconf:.55, rx0:-2.1, rx1:2.1, ry0:-2.4, ry1:1.2, pan:240};   // pan: 손 1어깨폭 → 렌즈 px
     const LS = "nuvi.cam.k.v2";
     let saved = null; try { saved = JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) {}
     const QS = new URLSearchParams(location.search);
@@ -3355,7 +3355,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       if (!h) h = (L && R) ? (L.y < R.y ? L : R) : (L || R);
       if (!h) { if (C.h && now - (C.handT || 0) < 600) { C.lastT = now; return; } lost(now); return; }   // 손목이 잠깐 가려져도 유지
       C.handT = now;
-      if (C.hand !== h.i) { C.sm = null; C.hist.length = 0; C.oe = null; }
+      if (C.hand !== h.i) { C.sm = null; C.hist.length = 0; C.oe = null; C.eng = 0; C.pv = null; C.engT = 0; }
       C.hand = h.i;
       if (!C.seenAt) { C.seenAt = now; chip.classList.add("seen"); }
       C.actT = now;
@@ -3378,6 +3378,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       if (!CAL.on) act(h, C.sp, C.sm.y < 1.8, dt, now);
     }
     function lost(now) {
+      C.eng = 0; C.pv = null; C.engT = 0;
       chip.classList.remove("seen"); C.seenAt = 0; C.sm = null; C.oe = null; C.hist.length = 0; C.sh = []; C.h = null; C.sp = 0; C.spS = 0; C.th = [];
       if (C.on && !CAL.on) { say("카메라 앞에 서 주세요");
         coach.set("nobody", "person", "카메라 앞에 서 주세요", "1~2m 떨어져서 손을 들어 보세요", {step: -1}); }
@@ -3399,6 +3400,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       C.prevSt = state;
       if (state === "IDLE" || state === "LOCK") {
         if (F) {
+          C.pv = null;   // 놓았을 때 그 자리에서 이어서
           // 앞뒤 → 줌(조이스틱처럼): 쥔 자리보다 앞으로 밀고 있으면 점점 가까이, 당기고 있으면 점점 멀리, 제자리면 멈춤
           //   손 크기 비율 ±7%는 무시 · 27%면 최고 속도(1초에 약 1.8배) — 깊이를 정확히 못 재도 편하게
           let v = F.rS / F.r0 - 1; v = Math.sign(v) * Math.max(0, Math.abs(v) - .07);
@@ -3419,18 +3421,31 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
             else { refuse(); nudge(); coach.warn(state === "LOCK" ? "먼저 2배까지 쭉 밀어요" : "사슴벌레를 먼저 찾아요"); settleRing(0, false); }
           }
         } else {
-          if (state === "IDLE") coach.set("idle" + (raised ? 1 : 0), "palm", raised ? "손바닥으로 렌즈를 움직여요" : "손을 들어 보세요",
-                                          raised ? (GS ? "주먹을 쥐고 앞으로 밀면 가까이 · 당기면 멀리" : "사슴벌레를 찾아 가운데에 담아요") : "손을 든 쪽으로 렌즈가 따라와요");
+          const engaging = raised && !C.eng && !tween;   // 손 찾는 중이면 그 안내만
+          if (engaging) {}
+          else if (state === "IDLE") coach.set("idle" + (raised ? 1 : 0), "palm", raised ? "손바닥으로 렌즈를 움직여요" : "손을 들어 보세요",
+                                          raised ? (GS ? "주먹을 쥐고 앞으로 밀면 가까이 · 당기면 멀리" : "사슴벌레를 찾아 가운데에 담아요") : "손을 들면 렌즈를 움직일 수 있어요");
           else coach.set("lock", "fist", GS ? "찾았다! 주먹을 쥐어요" : "찾았다! 그대로 멈춰요", GS ? "주먹을 앞으로 쭉 밀면 가까이 다가가요" : "멈추면 가까이 다가가요");
+          // ---- 손을 먼저 찾고(0.6초 가만히 = 손 잡기), 그다음부터 '손이 움직인 만큼만' 렌즈가 움직인다 (트랙패드처럼 상대 이동) ----
+          if (!raised || tween || RING.drag) { C.eng = 0; C.pv = null; C.engT = 0; }
           if (raised && !tween && !RING.drag) {
-            const nx = clamp((C.sm.x - (K.rx0 + K.rx1) / 2) / ((K.rx1 - K.rx0) / 2 * .85), -1, 1);
-            const ny = clamp((C.sm.y - (K.ry0 + K.ry1) / 2) / ((K.ry1 - K.ry0) / 2 * .85), -1, 1);
-            let tx = W / 2 + nx * W * .5, ty = H * .5 + ny * H * .5;   // 범위를 줄여 손 떨림이 덜 커지게
-            if (state === "LOCK") { tx += (B.x - tx) * .45; ty += (B.y - ty) * .45; }   // 대상 근처면 살짝 끌어당김
-            const k = 1 - Math.exp(-dt / .38);   // 0.38초에 걸쳐 따라감 — 휙휙 대신 스르르
-            let mx = (tx - cam.x) * k, my = (ty - cam.y) * k;
-            const lim = 520 * dt, ml = Math.hypot(mx, my); if (ml > lim) { mx *= lim / ml; my *= lim / ml; }
-            if (Math.hypot(tx - cam.x, ty - cam.y) > 4) { cam.x += mx; cam.y += my; }
+            if (!C.eng) {   // 손 잡는 중 — 렌즈는 그대로
+              if (!C.engT || (C.spS || 0) > 1.4) C.engT = now;
+              const p = clamp((now - C.engT) / 600, 0, 1);
+              coach.set("engage", "palm", p < 1 ? "손을 찾는 중…" : "손을 찾았어요!", "손바닥을 보여 주고 잠깐 멈춰요", {act: p >= 1});
+              if (p >= 1) { C.eng = 1; C.pv = {x: C.sm.x, y: C.sm.y}; C.tgt = {x: cam.x, y: cam.y}; FX.burst(undefined, 8); }
+            } else {
+              if (!C.pv || !C.tgt) { C.pv = {x: C.sm.x, y: C.sm.y}; C.tgt = {x: cam.x, y: cam.y}; }
+              let dx = C.sm.x - C.pv.x, dy = C.sm.y - C.pv.y; C.pv = {x: C.sm.x, y: C.sm.y};
+              if (Math.hypot(dx, dy) < .004) dx = dy = 0;   // 미세 떨림 무시
+              if (Math.hypot(dx, dy) > .3) dx = dy = 0;      // 한 프레임에 0.3어깨폭 넘게 튀면 인식 오류로 보고 무시(렌즈가 튀지 않게)
+              const gain = K.pan / zoom;   // 어깨폭 1만큼 → 화면 K.pan px (확대할수록 정밀하게)
+              C.tgt.x = clamp(C.tgt.x + dx * gain, 0, W); C.tgt.y = clamp(C.tgt.y + dy * gain * .9, 0, H);
+              if (state === "LOCK") { const m = 1 - Math.exp(-dt / 1.6); C.tgt.x += (B.x - C.tgt.x) * m * .35; C.tgt.y += (B.y - C.tgt.y) * m * .35; }   // 대상 근처면 아주 살짝 끌어당김
+              const k = 1 - Math.exp(-dt / .16);
+              cam.x += (C.tgt.x - cam.x) * k; cam.y += (C.tgt.y - cam.y) * k;
+              clampCam(); C.tgt.x = clamp(C.tgt.x, cam.x - 40, cam.x + 40); C.tgt.y = clamp(C.tgt.y, cam.y - 40, cam.y + 40);   // 가장자리에서 목표가 멀리 달아나지 않게
+            }
             // 제스처 모델이 없을 때만: 가만히 있으면 천천히 다가간다(예전 방식)
             if (!GS) { if (state === "LOCK" && C.still > .6) zoom = Math.min(2, zoom + dt * .45); else if (state === "IDLE" && zoom > 1) zoom = Math.max(1, zoom - dt * .5); zoomTarget = zoom; }
             applyScene();
