@@ -3037,72 +3037,8 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     if (lab) { x.fillStyle = labCol; x.font = `500 ${9 * sc}px ui-monospace,"SF Mono",Menlo,monospace`; x.textBaseline = "top"; x.fillText(lab, Math.round(bx + bw + 4 * sc), Math.round(by)); x.textBaseline = "alphabetic"; }
   }
 
-  // ===== 렌즈 스캔 트래킹 — 렌즈에 보이는 영상을 실제로 분석 =====
-  const TRK = (() => {
-    const cvL = document.createElement("canvas"); cvL.className = "trk-cv"; scene.after(cvL);
-    const x = cvL.getContext("2d"), S = 200, off = document.createElement("canvas"); off.width = off.height = S;
-    const ox = off.getContext("2d", {willReadFrequently: true}), mag = new Float32Array(S * S);
-    const vEl = scene.querySelector("video"), sImg = scene.querySelector("img");
-    let a = 0, last = 0, tracks = [], seed = 0, dirty = false;
-    const want = () => state === "SCAN";
-    function src() {
-      if (vEl && vEl.readyState >= 2 && vEl.videoWidth && !scene.classList.contains("vfail")) return [vEl, vEl.videoWidth];
-      if (sImg && sImg.naturalWidth) return [sImg, sImg.naturalWidth];
-      return [null, 0];
-    }
-    function tick(now) {
-      requestAnimationFrame(tick);
-      a += ((want() ? 1 : 0) - a) * (want() ? .12 : .2);
-      if (a < .02) { if (dirty) { x.clearRect(0, 0, cvL.width, cvL.height); dirty = false; tracks = []; } return; }
-      if (now - last < 70) return; last = now;
-      const L = lens.clientWidth, dpr = Math.min(2, devicePixelRatio || 1);
-      if (cvL.width !== Math.round(L * dpr)) { cvL.width = cvL.height = Math.round(L * dpr); }
-      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, L, L); dirty = true;
-      const [img, iw] = src(); if (!img) return;
-      const s = zoom * viewScale(), half = L / 2 / s, k = iw / W;
-      let d;
-      try { ox.drawImage(img, (cam.x - half) * k, (cam.y - half) * k, 2 * half * k, 2 * half * k, 0, 0, S, S); d = ox.getImageData(0, 0, S, S).data; } catch (e) { return; }
-      const g = trkSobel(d, S, S, mag);
-      // 윤곽 문턱: 상위 11%
-      let mx = 0; for (let i = 0; i < mag.length; i++) if (mag[i] > mx) mx = mag[i];
-      const hist = new Uint32Array(64); for (let i = 0; i < mag.length; i++) hist[Math.min(63, mag[i] / (mx || 1) * 64 | 0)]++;
-      let acc = 0, th = mx; for (let b = 63; b >= 0; b--) { acc += hist[b]; if (acc > mag.length * .07) { th = b / 64 * mx; break; } }
-      const u = L / S;
-      x.globalAlpha = a * .3; x.fillStyle = "#5CF59A";
-      for (let y = 1; y < S - 1; y++) for (let xx = 1; xx < S - 1; xx++) { const i = y * S + xx; if (mag[i] > th) x.fillRect(xx * u, y * u, u * .62, u * .62); }
-      // 덩어리: 16×16 칸마다 윤곽 점의 무게중심 · 퍼짐을 재고, 점수 높은 칸부터 겹치지 않게 골라 박스로 (격자 티 안 나게)
-      const N = 16, cs = S / N, cells = [];
-      for (let cy = 0; cy < N; cy++) for (let cx = 0; cx < N; cx++) {
-        let e = 0, dk = 0, sx = 0, sy = 0, sxx = 0, syy = 0;
-        for (let y = cy * cs | 0; y < (cy + 1) * cs; y++) for (let xx = cx * cs | 0; xx < (cx + 1) * cs; xx++) { const i = y * S + xx;
-          if (mag[i] > th) { e++; sx += xx; sy += y; sxx += xx * xx; syy += y * y; } if (g[i] < 70) dk++; }
-        if (e < 4) continue;
-        const mx2 = sx / e, my2 = sy / e;
-        cells.push({cx, cy, v: e / (cs * cs) + dk / (cs * cs) * .3, x: mx2, y: my2, sdx: Math.sqrt(Math.max(1, sxx / e - mx2 * mx2)), sdy: Math.sqrt(Math.max(1, syy / e - my2 * my2))});
-      }
-      cells.sort((p, q) => q.v - p.v);
-      const top = [];
-      for (const c of cells) { if (top.length >= 8) break; if (top.some(t => Math.abs(t.cx - c.cx) < 2.2 && Math.abs(t.cy - c.cy) < 2.2)) continue; top.push(c); }
-      const blobs = top.map(c => { const bw = (c.sdx * 2.6 + cs * .5) * u * (1 + c.v) * .5, bh = (c.sdy * 2.6 + cs * .5) * u * (1 + c.v) * .5;   // 50%
-        return {x: c.x * u - bw / 2, y: c.y * u - bh / 2, w: bw, h: bh, v: c.v}; });
-      // 이전 박스와 짝지어 부드럽게 — 추적되는 느낌
-      const nt = [];
-      for (const b of blobs) {
-        let best = null, bd = 1e9; for (const t of tracks) { const dd = Math.hypot(t.x - b.x, t.y - b.y); if (dd < bd && !t.used) { bd = dd; best = t; } }
-        if (best && bd < L * .2) { best.used = 1; best.x += (b.x - best.x) * .5; best.y += (b.y - best.y) * .5; best.w += (b.w - best.w) * .5; best.h += (b.h - best.h) * .5; best.v = b.v; nt.push(best); }
-        else nt.push(Object.assign({id: ++seed, ph: Math.random()}, b));
-      }
-      nt.forEach(t => t.used = 0); tracks = nt;
-      // 연결선 → 박스 → 라벨
-      const tg = toScreen(B); x.globalAlpha = a * .4; x.strokeStyle = "#A8FFC9"; x.lineWidth = .7;
-      const cs2 = tracks.map(t => ({x: t.x + t.w / 2, y: t.y + t.h / 2})).sort((p, q) => p.x - q.x);
-      x.beginPath(); cs2.forEach((p, i) => i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)); x.stroke();
-      x.globalAlpha = a;
-      tracks.forEach((t, i) => trkBox(x, t.x, t.y, t.w, t.h, "#3DF58A", i < 3 ? trkF7(t.v * 1.7 + t.ph + now / 9e4) : "", "#EFFFF4"));
-    }
-    requestAnimationFrame(tick);
-    return {tracks: () => tracks};
-  })();
+  // 렌즈 스캔 트래킹은 뺐다(2026-10-29) — 메인 뷰파인더는 깨끗하게, 트래킹은 왼쪽 관람객 모니터에만
+  const TRK = {tracks: () => []};
 
   // ===== 카메라 모션 모드 v2 (몸 + 손 제스처 + 실측 보정) =====
   const CAM = (() => {
