@@ -1903,11 +1903,21 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
   html.cam-on .wrap{width:100vw!important}
   html.cam-on .rail,html.cam-on .controls,html.cam-on footer,html.cam-on .msg-chip{display:none!important}
   html.cam-on header{transform:scale(.36);transform-origin:50% 0;margin-bottom:-46px}   /* 로고 절반 */
-  html.cam-on body{background:#FFFFFF!important}
-  html.cam-on .amb-bg,html.cam-on .amb-veil,html.cam-on .bz-cv,html.cam-on .bz-knob,html.cam-on .mode-pill,html.cam-on #hudZoom{display:none!important}
-  html.cam-on .logo{color:#1E1F1B!important}
-  html.cam-on .bezel{padding:0!important;background:none!important;box-shadow:none!important;cursor:default!important}
-  html.cam-on .lens{box-shadow:0 0 0 1px rgba(30,31,27,.14)}
+  /* ---- 바탕: 앱 UI와 같은 바탕(회백 #FAFAFA + 위쪽 라임(왼)·하늘(오른) 번짐, 아래로 흰색) — 마우스·카메라 공통 ---- */
+  body{background:#FAFAFA!important}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:
+    radial-gradient(46vw 40vw at 8% 0%,rgba(222,240,150,.85),rgba(222,240,150,0) 72%),
+    radial-gradient(46vw 48vw at 100% 8%,rgba(170,220,238,.80),rgba(170,220,238,0) 72%),
+    radial-gradient(60vw 24vw at 45% 0%,rgba(228,244,190,.60),transparent 75%),
+    linear-gradient(180deg,rgba(236,246,232,.9) 0%,rgba(240,246,244,.55) 38%,rgba(250,250,250,0) 62%)}
+  .amb-bg,.amb-veil{display:none!important}
+  .logo{color:#1E1F1B!important}
+  html.cam-on #hudZoom{display:none!important}
+  /* 패널·조작 버튼 = 앱의 검정 카드(.kdark) — 회백 바탕 위에서 탁해지지 않게 단색 + 왼쪽 아래 라임 번짐 */
+  .rail .panel,.rail .band,.controls{background:#121310!important;border-color:transparent!important;box-shadow:0 18px 40px -22px rgba(18,19,16,.45)!important}
+  .rail .panel,.rail .band{background-image:radial-gradient(60% 40% at 0% 100%,rgba(204,229,0,.12),transparent 70%)!important}
+  footer{color:#62635C!important}
+  .camchip:not(.on){background:#121310}
   html.cam-on .camchip{background:rgba(30,31,27,.045);color:#1E1F1B;box-shadow:inset 0 0 0 1px rgba(30,31,27,.08);-webkit-backdrop-filter:none;backdrop-filter:none}
   html.cam-on .camchip .cs{color:#6A6B63}
   html.cam-on .camchip .cg,html.cam-on .camchip .cb{background:rgba(30,31,27,.07);color:#1E1F1B}
@@ -1943,6 +1953,17 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
   .camcoach.go .co-tx span{color:#3A3B2A}
   .camcoach.go .co-dots i{background:rgba(30,31,27,.2)}.camcoach.go .co-dots i.done,.camcoach.go .co-dots i.on{background:#1E1F1B;box-shadow:none}
   @keyframes coGo{to{transform:translateX(-50%) scale(1.04)}}
+  /* ---- 앱 UI에서 가져온 연출: 다이컷 스티커 · 보상 터짐 · LED 점 숫자 ---- */
+  .camfx{position:fixed;inset:0;z-index:61;pointer-events:none;overflow:hidden}
+  .camfx .stk{position:absolute;left:0;top:0;padding:.34em .78em .4em;border-radius:999px;font:800 clamp(18px,1.9vw,26px)/1 Pretendard,"Apple SD Gothic Neo",sans-serif;
+    letter-spacing:.02em;color:#1E1F1B;box-shadow:0 0 0 4px #fff,0 10px 24px -10px rgba(18,19,16,.35);white-space:nowrap;transform-origin:50% 60%}
+  .camfx .stk.pk{background:#FF8FC4}.camfx .stk.yl{background:#FFD31F}.camfx .stk.lm{background:#CCE500}
+  .camfx .brs{position:absolute;left:0;top:0;width:0;height:0}
+  .camfx .brs i{position:absolute;left:0;top:0;border-radius:50%}
+  .camled{position:fixed;z-index:61;pointer-events:none;opacity:0;transition:opacity .35s}
+  .camled.on{opacity:1}
+  .camcoach .co-ic svg{transition:transform .12s linear}
+
 
   /* ---- 실측 보정 ---- */
   .camcal{position:fixed;inset:0;z-index:80;display:none;place-items:center;padding:28px;background:rgba(10,11,8,.86);color:#F1F2E4;font-family:var(--font,inherit);
@@ -1994,14 +2015,14 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
   html.cam-on .camchip .cv{display:none!important}
   .cammon canvas{position:absolute;inset:0;width:100%;height:100%}
   .cammon .mh,.cammon .mf{position:absolute;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;
-    font:700 11px/1 Pretendard,"Apple SD Gothic Neo",sans-serif;letter-spacing:-.01em;color:var(--mc,#14151A);pointer-events:none}
-  .cammon .mh{top:10px}.cammon .mf{bottom:10px}
-  .cammon .mh i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#C8D330;margin-right:6px;vertical-align:0;animation:monRec 1.2s steps(2) infinite}
+    font:600 9.5px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mc,#14151A);pointer-events:none}
+  .cammon .mh{top:10px}.cammon .mf{bottom:10px}.cammon .mh span,.cammon .mf span{white-space:nowrap}
+  .cammon .mh i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#19C45E;margin-right:6px;vertical-align:0;animation:monRec 1.2s steps(2) infinite}
   @keyframes monRec{50%{opacity:.2}}
   @media (max-width:1100px){ html.cam-on .cammon{display:none} html.cam-on .camchip .cv{display:block!important} }
   @media (prefers-reduced-motion:reduce){ .cammon .mh i{animation:none} }
 </style>
-<div class="camchip" id="camChip" role="button" tabindex="0" aria-label="카메라로 체험하기"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.4-2h7.8l1.4 2h2.2A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg></span><span class="cv"><video playsinline muted></video><canvas></canvas></span><span class="ct"><b><i class="dot"></i><span class="cl">카메라로 체험</span><span class="ck">K</span></b><span class="cg" id="camG">손 제스처</span><span class="cs" hidden>영상은 저장되지 않아요</span><button class="cb" id="camCalBtn" type="button">감도 보정 <span style="opacity:.5;margin-left:4px">L</span></button></span></div><div class="camcoach" id="camCoach" aria-live="polite"><span class="co-ic" id="coIc"></span><span class="co-tx"><b id="coT"></b><span id="coS"></span></span><span class="co-dots" id="coDots"><i></i><i></i><i></i><i></i><i></i><i></i></span></div><div class="camcal" id="camCal" role="dialog" aria-label="모션 보정"><div class="cc-in"><div class="cc-view"><canvas width="640" height="480"></canvas><span class="cc-tag" id="ccTag">손을 찾는 중</span></div><div class="cc-side"><div class="cc-k">모션 보정 <span class="cc-steps" id="ccSteps"></span></div><h2 class="cc-t" id="ccT">카메라 앞 1~2m에 서 주세요</h2><p class="cc-d" id="ccD"></p><div class="cc-bar"><i id="ccBar"></i></div><div class="cc-meter"><span>손 속도 <span style="opacity:.6">(어깨폭/초 · 초록 선 = 스윙 기준)</span></span><div class="m" id="ccSp"><i></i><b></b><span>0.0</span></div></div><div class="cc-res" id="ccRes"></div><div class="cc-btns"><button class="pri" id="ccGo" hidden>저장하고 체험 시작</button><button id="ccAgain" hidden>다시 보정</button><button id="ccSkip">이 단계 건너뛰기</button><button id="ccClose">닫기</button></div><div class="cc-note">결과는 이 브라우저에만 저장돼요 · 카메라 영상은 저장하지 않아요</div></div></div></div><div class="cammon" id="camMon" aria-hidden="true"><canvas></canvas><div class="mh"><span><i></i>움직임 따라가기</span><span id="monN"></span></div><div class="mf"><span id="monM">나를 따라와요</span><span id="monF"></span></div></div>
+<div class="camchip" id="camChip" role="button" tabindex="0" aria-label="카메라로 체험하기"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.4-2h7.8l1.4 2h2.2A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="12.6" r="3.4"/></svg></span><span class="cv"><video playsinline muted></video><canvas></canvas></span><span class="ct"><b><i class="dot"></i><span class="cl">카메라로 체험</span><span class="ck">K</span></b><span class="cg" id="camG">손 제스처</span><span class="cs" hidden>영상은 저장되지 않아요</span><button class="cb" id="camCalBtn" type="button">감도 보정 <span style="opacity:.5;margin-left:4px">L</span></button></span></div><div class="camcoach" id="camCoach" aria-live="polite"><span class="co-ic" id="coIc"></span><span class="co-tx"><b id="coT"></b><span id="coS"></span></span><span class="co-dots" id="coDots"><i></i><i></i><i></i><i></i><i></i><i></i></span></div><div class="camfx" id="camFx" aria-hidden="true"></div><canvas class="camled" id="camLed" aria-hidden="true"></canvas><div class="camcal" id="camCal" role="dialog" aria-label="모션 보정"><div class="cc-in"><div class="cc-view"><canvas width="640" height="480"></canvas><span class="cc-tag" id="ccTag">손을 찾는 중</span></div><div class="cc-side"><div class="cc-k">모션 보정 <span class="cc-steps" id="ccSteps"></span></div><h2 class="cc-t" id="ccT">카메라 앞 1~2m에 서 주세요</h2><p class="cc-d" id="ccD"></p><div class="cc-bar"><i id="ccBar"></i></div><div class="cc-meter"><span>손 속도 <span style="opacity:.6">(어깨폭/초 · 초록 선 = 스윙 기준)</span></span><div class="m" id="ccSp"><i></i><b></b><span>0.0</span></div></div><div class="cc-res" id="ccRes"></div><div class="cc-btns"><button class="pri" id="ccGo" hidden>저장하고 체험 시작</button><button id="ccAgain" hidden>다시 보정</button><button id="ccSkip">이 단계 건너뛰기</button><button id="ccClose">닫기</button></div><div class="cc-note">결과는 이 브라우저에만 저장돼요 · 카메라 영상은 저장하지 않아요</div></div></div></div><div class="cammon" id="camMon" aria-hidden="true"><canvas></canvas><div class="mh"><span><i></i>Motion tracking</span><span id="monN">00 blobs</span></div><div class="mf"><span id="monM">mode 01 / threshold</span><span id="monF">00 fps</span></div></div>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
@@ -2851,7 +2872,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     const pulse = state==="PROMPT" ? .5 + .5*Math.sin(now/180) : 0;
     const litCol = TK.warn > .05 ? AMB_ : LIME_;
     // 1) 유리 띠 — 바탕이 비치는 어두운 반투명
-    x.beginPath(); x.arc(c,c,Rm,0,Math.PI*2); x.lineWidth = band; x.strokeStyle = "rgba(6,9,4,.42)"; x.stroke();
+    x.beginPath(); x.arc(c,c,Rm,0,Math.PI*2); x.lineWidth = band; x.strokeStyle = "#1E1F1B"; x.stroke();   // 밝은 바탕 위 — 잉크 단색 띠
     // 2) 테 두 줄 — 위가 밝고 아래로 옅어진다(빛은 고정)
     const gO = x.createLinearGradient(0, c-Ro, 0, c+Ro);
     gO.addColorStop(0, `rgba(${TINT},.78)`); gO.addColorStop(.55, `rgba(${TINT},.22)`); gO.addColorStop(1, `rgba(${TINT},.34)`);
@@ -2879,7 +2900,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       capsule(x, c, an, Rm - L/2 + 1.3, Rm + L/2 - 1.3, 1.6, (on || done || scanP >= 0) ? `rgba(${litCol},1)` : "rgba(20,24,14,.55)");
       const rr = Ro + 11, co = Math.cos(an), si = Math.sin(an);
       x.font = `500 ${on ? 10.5 : 9.5}px ${MONO}`;
-      x.fillStyle = on ? (D === 26 ? `rgba(${LIME_},1)` : "rgba(243,244,236,.95)") : "rgba(243,244,236,.42)";
+      x.fillStyle = on ? (D === 26 ? "#6F7E00" : "#1E1F1B") : "rgba(30,31,27,.42)";   // 고리 바깥 숫자 — 밝은 바탕용
       x.save(); x.translate(c+co*rr, c+si*rr); x.rotate(D*Math.PI/180); x.fillText(t + (t === "0.3" ? "m" : ""), 0, 0); x.restore();
     }
     // 5) 유리 구슬 손잡이 — 렌즈보다 위 층(DOM)이라 렌즈에 가려지지 않는다
@@ -3010,27 +3031,6 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     return g;
   }
   const trkF7 = v => (Math.abs(v) % 1).toFixed(7);
-  // ---- 유아틱 버전: 말랑한 둥근 스티커 + 통통 튀는 스프링 + 점선 ----
-  const TRK_COL = ["#C8D330", "#F4A6C0", "#8CC8F0", "#F7C07A", "#B9A6F0"];
-  function trkRR(x, bx, by, bw, bh, r) { r = Math.min(r, bw / 2, bh / 2); x.beginPath(); x.moveTo(bx + r, by); x.arcTo(bx + bw, by, bx + bw, by + bh, r); x.arcTo(bx + bw, by + bh, bx, by + bh, r); x.arcTo(bx, by + bh, bx, by, r); x.arcTo(bx, by, bx + bw, by, r); x.closePath(); }
-  function trkBlob(x, cx, cy, w, h, col, lab, sc = 1, now = 0, ph = 0) {
-    const k = 1 + .07 * Math.sin(now / 380 + ph * 6.28);   // 숨 쉬듯 말랑
-    const bw = w * k, bh = h * (2 - k), bx = cx - bw / 2, by = cy - bh / 2;
-    trkRR(x, bx, by, bw, bh, Math.min(bw, bh) * .38);
-    x.save(); x.globalAlpha *= .22; x.fillStyle = col; x.fill(); x.restore();
-    x.lineWidth = 2.2 * sc; x.strokeStyle = col; x.stroke();
-    x.fillStyle = col; x.beginPath(); x.arc(cx, cy, 2.6 * sc, 0, 7); x.fill();   // 가운데 콕
-    if (lab) {
-      x.font = `700 ${11 * sc}px Pretendard,"Apple SD Gothic Neo",sans-serif`; const tw = x.measureText(lab).width, ph2 = 8 * sc, hh = 18 * sc;
-      const lx = cx + bw / 2 - 4 * sc, ly = by - hh + 4 * sc;
-      trkRR(x, lx, ly, tw + ph2 * 2, hh, hh / 2); x.fillStyle = col; x.fill();
-      x.fillStyle = "#1E1F1B"; x.fillText(lab, lx + ph2, ly + hh * .7);
-    }
-  }
-  function trkSpring(t, tx, ty, dt) {   // 살짝 지나쳤다 돌아오는(통통) 따라가기
-    const K = 90, D = 11; t.vx = (t.vx || 0) + ((tx - t.x) * K - (t.vx || 0) * D) * dt; t.vy = (t.vy || 0) + ((ty - t.y) * K - (t.vy || 0) * D) * dt;
-    t.x += t.vx * dt; t.y += t.vy * dt;
-  }
   // 추적 박스 하나: 사각형 + X자 대각선 + 소수 라벨
   function trkBox(x, bx, by, bw, bh, col, lab, labCol, sc = 1) {
     x.strokeStyle = col; x.lineWidth = 1.1 * sc; x.strokeRect(bx, by, bw, bh);
@@ -3055,7 +3055,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       requestAnimationFrame(tick);
       a += ((want() ? 1 : 0) - a) * (want() ? .12 : .2);
       if (a < .02) { if (dirty) { x.clearRect(0, 0, cvL.width, cvL.height); dirty = false; tracks = []; } return; }
-      if (now - last < 110) return; last = now;
+      if (now - last < 70) return; last = now;
       const L = lens.clientWidth, dpr = Math.min(2, devicePixelRatio || 1);
       if (cvL.width !== Math.round(L * dpr)) { cvL.width = cvL.height = Math.round(L * dpr); }
       x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, L, L); dirty = true;
@@ -3069,7 +3069,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       const hist = new Uint32Array(64); for (let i = 0; i < mag.length; i++) hist[Math.min(63, mag[i] / (mx || 1) * 64 | 0)]++;
       let acc = 0, th = mx; for (let b = 63; b >= 0; b--) { acc += hist[b]; if (acc > mag.length * .085) { th = b / 64 * mx; break; } }
       const u = L / S;
-      x.globalAlpha = a * .28; x.fillStyle = "#7DF2DC";
+      x.globalAlpha = a * .55; x.fillStyle = "#5CF59A";
       for (let y = 1; y < S - 1; y++) for (let xx = 1; xx < S - 1; xx++) { const i = y * S + xx; if (mag[i] > th) x.fillRect(xx * u, y * u, u * .62, u * .62); }
       // 덩어리: 16×16 칸마다 윤곽 점의 무게중심 · 퍼짐을 재고, 점수 높은 칸부터 겹치지 않게 골라 박스로 (격자 티 안 나게)
       const N = 16, cs = S / N, cells = [];
@@ -3083,23 +3083,24 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       }
       cells.sort((p, q) => q.v - p.v);
       const top = [];
-      for (const c of cells) { if (top.length >= 5) break; if (top.some(t => Math.abs(t.cx - c.cx) < 2.2 && Math.abs(t.cy - c.cy) < 2.2)) continue; top.push(c); }
+      for (const c of cells) { if (top.length >= 8) break; if (top.some(t => Math.abs(t.cx - c.cx) < 2.2 && Math.abs(t.cy - c.cy) < 2.2)) continue; top.push(c); }
       const blobs = top.map(c => { const bw = (c.sdx * 2.6 + cs * .5) * u * (1 + c.v), bh = (c.sdy * 2.6 + cs * .5) * u * (1 + c.v);
         return {x: c.x * u - bw / 2, y: c.y * u - bh / 2, w: bw, h: bh, v: c.v}; });
       // 이전 박스와 짝지어 부드럽게 — 추적되는 느낌
       const nt = [];
       for (const b of blobs) {
         let best = null, bd = 1e9; for (const t of tracks) { const dd = Math.hypot(t.x - b.x, t.y - b.y); if (dd < bd && !t.used) { bd = dd; best = t; } }
-        if (best && bd < L * .2) { best.used = 1; trkSpring(best, b.x, b.y, .11); best.w += (b.w - best.w) * .2; best.h += (b.h - best.h) * .2; best.v = b.v; nt.push(best); }
+        if (best && bd < L * .2) { best.used = 1; best.x += (b.x - best.x) * .5; best.y += (b.y - best.y) * .5; best.w += (b.w - best.w) * .5; best.h += (b.h - best.h) * .5; best.v = b.v; nt.push(best); }
         else nt.push(Object.assign({id: ++seed, ph: Math.random()}, b));
       }
       nt.forEach(t => t.used = 0); tracks = nt;
       // 연결선 → 박스 → 라벨
-      const tg = toScreen(B); x.globalAlpha = a * .7; x.strokeStyle = "#FFFFFF"; x.lineWidth = 1.6; x.lineCap = "round"; x.setLineDash([.5, 6]);
+      const tg = toScreen(B); x.globalAlpha = a * .55; x.strokeStyle = "#A8FFC9"; x.lineWidth = .8;
       const cs2 = tracks.map(t => ({x: t.x + t.w / 2, y: t.y + t.h / 2})).sort((p, q) => p.x - q.x);
       x.beginPath(); cs2.forEach((p, i) => i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)); x.stroke();
-      x.setLineDash([]); x.globalAlpha = a;
-      tracks.forEach((t, i) => trkBlob(x, t.x + t.w / 2, t.y + t.h / 2, Math.max(26, t.w * .8), Math.max(26, t.h * .8), TRK_COL[(t.id || i) % TRK_COL.length], i < 3 ? String(i + 1) : "", 1, now, t.ph));
+      x.beginPath(); cs2.slice(0, 4).forEach(p => { x.moveTo(tg.x, tg.y); x.lineTo(p.x, p.y); }); x.stroke();
+      x.globalAlpha = a;
+      tracks.forEach((t, i) => trkBox(x, t.x, t.y, t.w, t.h, "#3DF58A", i < 5 ? trkF7(t.v * 1.7 + t.ph + now / 9e4) : "", "#EFFFF4"));
     }
     requestAnimationFrame(tick);
     return {tracks: () => tracks};
@@ -3125,7 +3126,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     const DEBUG = QS.has("debug");
     const say = (t, s) => { lab.textContent = t; if (s !== undefined) { sub.hidden = !s; sub.textContent = s || ""; } };
     // ---- 코치: 지금 할 동작 하나만 크게 (칩은 인식 상태만) ----
-    const IC = {"person": "<circle cx=\"12\" cy=\"7\" r=\"3.2\"/><path d=\"M5 20.5c.6-4 3.4-6.5 7-6.5s6.4 2.5 7 6.5\"/>", "palm": "<path d=\"M7.5 12.5V6.8a1.4 1.4 0 0 1 2.8 0v4.7M10.3 11V5a1.4 1.4 0 0 1 2.8 0v6M13.1 11V6a1.4 1.4 0 0 1 2.8 0v6.2M15.9 12V8.6a1.4 1.4 0 0 1 2.8 0v5.6c0 3.7-2.6 6.3-6.2 6.3-2.6 0-4.1-1.3-5.4-3.4L5 14.2a1.4 1.4 0 0 1 2.4-1.4l.1.2\"/>", "fist": "<path d=\"M7 10.5V9a1.6 1.6 0 0 1 3.2 0v1.2M10.2 10V8.4a1.6 1.6 0 0 1 3.2 0V10M13.4 10V8.9a1.6 1.6 0 0 1 3.2 0V11M16.6 11a1.6 1.6 0 0 1 2.4 1.4v1.4c0 3.6-2.7 6.2-6.4 6.2H12c-3.1 0-5.4-2.2-5.4-5.3v-2.4c0-1.1.9-1.9 2-1.8l3 .3a1.5 1.5 0 0 1-.2 3H9.6\"/>", "hold": "<rect x=\"7\" y=\"5.5\" width=\"3.4\" height=\"13\" rx=\"1.2\"/><rect x=\"13.6\" y=\"5.5\" width=\"3.4\" height=\"13\" rx=\"1.2\"/>", "swing": "<path d=\"M4 15a8 8 0 0 1 13.5-5.8\"/><path d=\"M18 5v4.5h-4.5\"/><path d=\"M9 19.5l1.6-3.2M13 20.5l.7-3.4\"/>", "thumb": "<path d=\"M7.5 10.5v9H5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM7.5 10.5l3.6-6.3a1.7 1.7 0 0 1 3.1 1.3l-.9 3.8h4.9a2 2 0 0 1 2 2.4l-1.3 6.2a2.5 2.5 0 0 1-2.4 1.9H7.5\"/>", "victory": "<path d=\"M9.6 12 7.3 4.6a1.4 1.4 0 0 1 2.7-.8l2.2 6.8 1.4-7a1.4 1.4 0 0 1 2.8.5l-1.3 7.6\"/><path d=\"M8.3 12.4a1.5 1.5 0 0 1 2.9-.6M11.2 11.8l.3-.2a1.5 1.5 0 0 1 2.1 1.9M13.6 13.5a1.5 1.5 0 0 1 2.6 1.2c-.4 3.4-2.6 5.8-5.6 5.8-2.6 0-4.7-1.8-5-4.4l-.3-2.3a1.5 1.5 0 0 1 2.9-.6\"/>", "net": "<circle cx=\"12\" cy=\"12\" r=\"7.5\"/><path d=\"M12 4.5v15M4.5 12h15M6.7 6.7l10.6 10.6M17.3 6.7 6.7 17.3\"/>", "star": "<path d=\"m12 4 2.3 4.9 5.2.6-3.9 3.6 1.1 5.2L12 15.7l-4.7 2.6 1.1-5.2-3.9-3.6 5.2-.6z\"/>"};
+    const IC = {"push": "<path d=\"M8 13.5V12a1.5 1.5 0 0 1 3 0v1M11 12.4v-1a1.5 1.5 0 0 1 3 0v1.3M14 12.7v-.8a1.5 1.5 0 0 1 3 0v1.8c0 3.2-2.4 5.6-5.6 5.6h-.6c-2.8 0-4.8-2-4.8-4.7v-1.4a1.6 1.6 0 0 1 2-1.6\"/><path d=\"M12 2.5v4M10 4.5l2-2 2 2\"/>", "twist": "<path d=\"M9 12.5V11a1.4 1.4 0 0 1 2.8 0v1M11.8 11.2v-.6a1.4 1.4 0 0 1 2.8 0V12M14.6 12v-.2a1.4 1.4 0 0 1 2.4-1v3c0 2.6-2 4.5-4.6 4.5h-.5c-2.3 0-4-1.7-4-3.9v-1a1.4 1.4 0 0 1 1.8-1.4\"/><path d=\"M4.5 9.5A8 8 0 0 1 18 5.5M18 2.5v3h-3\"/>", "person": "<circle cx=\"12\" cy=\"7\" r=\"3.2\"/><path d=\"M5 20.5c.6-4 3.4-6.5 7-6.5s6.4 2.5 7 6.5\"/>", "palm": "<path d=\"M7.5 12.5V6.8a1.4 1.4 0 0 1 2.8 0v4.7M10.3 11V5a1.4 1.4 0 0 1 2.8 0v6M13.1 11V6a1.4 1.4 0 0 1 2.8 0v6.2M15.9 12V8.6a1.4 1.4 0 0 1 2.8 0v5.6c0 3.7-2.6 6.3-6.2 6.3-2.6 0-4.1-1.3-5.4-3.4L5 14.2a1.4 1.4 0 0 1 2.4-1.4l.1.2\"/>", "fist": "<path d=\"M7 10.5V9a1.6 1.6 0 0 1 3.2 0v1.2M10.2 10V8.4a1.6 1.6 0 0 1 3.2 0V10M13.4 10V8.9a1.6 1.6 0 0 1 3.2 0V11M16.6 11a1.6 1.6 0 0 1 2.4 1.4v1.4c0 3.6-2.7 6.2-6.4 6.2H12c-3.1 0-5.4-2.2-5.4-5.3v-2.4c0-1.1.9-1.9 2-1.8l3 .3a1.5 1.5 0 0 1-.2 3H9.6\"/>", "hold": "<rect x=\"7\" y=\"5.5\" width=\"3.4\" height=\"13\" rx=\"1.2\"/><rect x=\"13.6\" y=\"5.5\" width=\"3.4\" height=\"13\" rx=\"1.2\"/>", "swing": "<path d=\"M4 15a8 8 0 0 1 13.5-5.8\"/><path d=\"M18 5v4.5h-4.5\"/><path d=\"M9 19.5l1.6-3.2M13 20.5l.7-3.4\"/>", "thumb": "<path d=\"M7.5 10.5v9H5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM7.5 10.5l3.6-6.3a1.7 1.7 0 0 1 3.1 1.3l-.9 3.8h4.9a2 2 0 0 1 2 2.4l-1.3 6.2a2.5 2.5 0 0 1-2.4 1.9H7.5\"/>", "victory": "<path d=\"M9.6 12 7.3 4.6a1.4 1.4 0 0 1 2.7-.8l2.2 6.8 1.4-7a1.4 1.4 0 0 1 2.8.5l-1.3 7.6\"/><path d=\"M8.3 12.4a1.5 1.5 0 0 1 2.9-.6M11.2 11.8l.3-.2a1.5 1.5 0 0 1 2.1 1.9M13.6 13.5a1.5 1.5 0 0 1 2.6 1.2c-.4 3.4-2.6 5.8-5.6 5.8-2.6 0-4.7-1.8-5-4.4l-.3-2.3a1.5 1.5 0 0 1 2.9-.6\"/>", "net": "<circle cx=\"12\" cy=\"12\" r=\"7.5\"/><path d=\"M12 4.5v15M4.5 12h15M6.7 6.7l10.6 10.6M17.3 6.7 6.7 17.3\"/>", "star": "<path d=\"m12 4 2.3 4.9 5.2.6-3.9 3.6 1.1 5.2L12 15.7l-4.7 2.6 1.1-5.2-3.9-3.6 5.2-.6z\"/>"};
     const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${IC[k] || ""}</svg>`;
     const coach = (() => { const el = $("camCoach"), ic = $("coIc"), t = $("coT"), s = $("coS"), dots = [...$("coDots").children];
       let key = "", warnT = 0, sNow = "", pend = "", pendT = 0;
@@ -3133,6 +3134,8 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       return {
         set(k, icon, title, subT, opt = {}) {
           const now = performance.now();
+          if (k === key && t.textContent !== title) t.textContent = title;
+          { const sv = ic.querySelector("svg"); if (sv) sv.style.transform = opt.rot ? `rotate(${opt.rot.toFixed(1)}deg)` : ""; }
           if (k !== key) {
             if (pend !== k) { pend = k; pendT = now; }
             if (key && !opt.now && now - pendT < 350) return;   // 잠깐 스쳐 가는 단계는 무시
@@ -3254,17 +3257,17 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       const ox = off.getContext("2d", {willReadFrequently: true}), mag = new Float32Array(PW * PH), edge = ox.createImageData(PW, PH);
       const eCv = document.createElement("canvas"); eCv.width = PW; eCv.height = PH; const ex = eCv.getContext("2d");
       const M = {
-        thr:  {n: "01", name: "threshold", f: "grayscale(1) contrast(3.2) brightness(1.25)", box: "#2B2FE3", line: "rgba(30,31,27,.45)", lab: "#14151A", ui: "#14151A"},
-        inv:  {n: "02", name: "invert",    f: "grayscale(1) contrast(6) brightness(1.1) invert(1)", box: "#E6F04A", line: "rgba(241,242,228,.55)", lab: "#F7F8EC", ui: "#F1F2E4"},
-        edge: {n: "03", name: "edge",      bg: "#FFFFFF", e: [91, 231, 208], box: "#2B2FE3", line: "rgba(20,21,26,.55)", lab: "#14151A", ui: "#14151A"},
-        red:  {n: "04", name: "contour",   bg: "#050505", e: [229, 50, 45], box: "#E6F04A", line: "rgba(241,242,228,.5)", lab: "#F7F8EC", ui: "#F1F2E4"},
+        thr:  {n: "01", name: "threshold", f: "grayscale(1) contrast(6) brightness(1.18)", box: "#12A150", line: "rgba(18,161,80,.6)", lab: "#0B3D20", ui: "#14151A"},
+        inv:  {n: "02", name: "invert",    f: "grayscale(1) contrast(6) brightness(1.1) invert(1)", box: "#3DF58A", line: "rgba(61,245,138,.5)", lab: "#EFFFF4", ui: "#F1F2E4"},
+        edge: {n: "03", name: "edge",      bg: "#FFFFFF", e: [43, 200, 105], box: "#0F8A43", line: "rgba(15,138,67,.5)", lab: "#0B3D20", ui: "#14151A"},
+        red:  {n: "04", name: "contour",   bg: "#050505", e: [61, 245, 138], box: "#C9FF7A", line: "rgba(61,245,138,.45)", lab: "#EFFFF4", ui: "#F1F2E4"},
       };
-      const byState = {IDLE: "thr", LOCK: "thr", MACRO: "thr", SCAN: "edge", PROMPT: "thr", CATCH: "thr", DONE: "thr"};   // 덜어냄: 평소 한 가지, 스캔 때만 윤곽
+      const byState = {IDLE: "thr", LOCK: "inv", MACRO: "inv", SCAN: "edge", PROMPT: "red", CATCH: "red", DONE: "thr"};
       let last = 0, fps = 0, fpsN = 0, fpsT = 0, cxS = .5, tr = {}, mode = "thr", flashT = 0;
       // 관절 — [id, 크기(px), 이름]
-      const PTS = [[0, 26], [11, 18], [12, 18], [13, 13], [14, 13], [15, 12], [16, 12], [23, 20], [24, 20]];
-      const LAB = new Set(["p0", "p16", "p23"]);   // 라벨은 몇 개만 — 겹치지 않게
-      const LINKS = [[15, 13], [13, 11], [11, 12], [12, 14], [14, 16], [11, 23], [23, 24], [24, 12]];
+      const PTS = [[0, 30], [11, 22], [12, 22], [13, 16], [14, 16], [15, 12], [16, 12], [23, 26], [24, 26], [25, 18], [26, 18]];
+      const LAB = new Set(["p0", "p15", "p16", "p23", "p26", "h8"]);   // 라벨은 몇 개만 — 겹치지 않게
+      const LINKS = [[15, 13], [13, 11], [11, 12], [12, 14], [14, 16], [11, 23], [23, 24], [24, 12], [23, 25], [24, 26], [0, 11], [0, 12]];
       function frame(now) {
         if (!document.documentElement.classList.contains("cam-on") || el.offsetWidth === 0) return;
         if (now - last < 50) return; last = now;
@@ -3273,7 +3276,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
         if (cvm.width !== Math.round(Wd * dpr)) { cvm.width = Math.round(Wd * dpr); cvm.height = Math.round(Hd * dpr); }
         x.setTransform(dpr, 0, 0, dpr, 0, 0);
         const vw = vid.videoWidth, vh = vid.videoHeight; if (!vw) return;
-        const lm = C.lm, nm = M[QS.get("monmode")] ? QS.get("monmode") : (byState[state] || "thr");   // ?monmode= 로 고정(점검용)
+        const lm = C.lm, nm = M[QS.get("monmode")] ? QS.get("monmode") : !C.h ? "edge" : (byState[state] || "thr");   // ?monmode= 로 고정(점검용)
         if (nm !== mode) { mode = nm; flashT = now; }
         const Mo = M[mode];
         // 사람을 따라 세로로 잘라 보기(4:5)
@@ -3290,26 +3293,29 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
           ex.putImageData(edge, 0, 0);
           x.fillStyle = Mo.bg; x.fillRect(0, 0, Wd, Hd); x.imageSmoothingEnabled = false; x.drawImage(eCv, 0, 0, Wd, Hd); x.imageSmoothingEnabled = true;
         }
+        if (now - flashT < 160) { x.fillStyle = "rgba(255,255,255,.55)"; x.fillRect(0, 0, Wd, Hd); }   // 모드가 바뀔 때 번쩍
         // 점 위치(거울) — 몸 + 손가락
         const P = (nx, ny) => ({x: Wd - (nx * vw - sx) / cw * Wd, y: ny * Hd});
         const pts = [];
         if (lm) for (const [i, sz] of PTS) if (V(lm[i])) pts.push({id: "p" + i, i, ...P(lm[i].x, lm[i].y), s: sz, v: lm[i].x});
-        if (C.hlm && C.roi) for (const j of [9]) { const q = C.hlm[j], r0 = C.roi; pts.push({id: "h" + j, ...P((r0.x + q.x * r0.s) / vw, (r0.y + q.y * r0.s) / vh), s: 22, v: q.x}); }   // 손은 큰 박스 하나
-        // 통통 따라가는 말랑 스티커
-        const keep = {}, dtm = .05;
-        for (const p of pts) { const t = tr[p.id] || {x: p.x, y: p.y, w: p.s, h: p.s, ph: Math.random()};
-          trkSpring(t, p.x, p.y, dtm); t.w += (p.s * 1.25 - t.w) * .2; t.h = t.w; t.v = p.v; keep[p.id] = t; }
+        if (C.hlm && C.roi) for (const j of [0, 4, 8, 12, 20]) { const q = C.hlm[j], r0 = C.roi; pts.push({id: "h" + j, ...P((r0.x + q.x * r0.s) / vw, (r0.y + q.y * r0.s) / vh), s: j ? 7 : 11, v: q.x}); }
+        // 부드럽게 + 움직임이 클수록 박스가 커진다
+        const keep = {};
+        for (const p of pts) { const t = tr[p.id] || {x: p.x, y: p.y, w: p.s, h: p.s * 1.25, ph: Math.random() * 3};
+          const sp = Math.hypot(p.x - t.x, p.y - t.y); t.x += (p.x - t.x) * .55; t.y += (p.y - t.y) * .55;
+          const big = p.s * (1 + Math.min(1.8, sp / 14)); t.w += (big - t.w) * .35; t.h += (big * (1.1 + .5 * Math.sin(t.ph)) - t.h) * .35; t.v = p.v; keep[p.id] = t; }
         tr = keep;
-        // 점선 뼈대 — 동글동글
-        x.save(); x.strokeStyle = Mo.line; x.lineWidth = 2.2; x.lineCap = "round"; x.setLineDash([.5, 6.5]); x.beginPath();
+        // 연결선: 뼈대 + 포인터 손에서 뻗는 긴 선(레퍼런스처럼 한 점으로 모이는)
+        x.strokeStyle = Mo.line; x.lineWidth = .9; x.beginPath();
         for (const [a2, b2] of LINKS) { const p = tr["p" + a2], q = tr["p" + b2]; if (p && q) { x.moveTo(p.x, p.y); x.lineTo(q.x, q.y); } }
-        x.stroke(); x.restore();
-        const NAME = {p0: "머리", h9: "손", p23: "몸"}, COL = {p0: "#F4A6C0", h9: "#C8D330", p11: "#8CC8F0", p12: "#8CC8F0", p13: "#F7C07A", p14: "#F7C07A", p15: "#B9A6F0", p16: "#B9A6F0", p23: "#8CC8F0", p24: "#8CC8F0"};
+        const hub = tr["p" + (C.hand || 16)];
+        if (hub) for (const id of ["p0", "p23", "p24", "p25", "p26", "h8"]) { const q = tr[id]; if (q) { x.moveTo(hub.x, hub.y); x.lineTo(q.x, q.y); } }
+        x.stroke();
         let n = 0;
         for (const id in tr) { const t = tr[id]; n++;
-          trkBlob(x, t.x, t.y, t.w, t.h, COL[id] || "#C8D330", NAME[id] || "", .9, now, t.ph); }
+          trkBox(x, t.x - t.w / 2, t.y - t.h / 2, t.w, t.h, Mo.box, LAB.has(id) ? trkF7(t.v + t.ph * .1) : "", Mo.lab, .9); }
         el.style.setProperty("--mc", Mo.ui);
-        nEl.textContent = `친구 점 ${n}개`; mEl.textContent = mode === "edge" ? "윤곽 보기" : "나를 따라와요"; fEl.textContent = "";
+        nEl.textContent = String(n).padStart(2, "0") + " blobs"; mEl.textContent = `mode ${Mo.n} / ${Mo.name}`; fEl.textContent = C.fs ? `${(C.fs.rS / C.fs.r0).toFixed(2)}× · ${C.fs.aS.toFixed(0)}°` : String(fps).padStart(2, "0") + " fps";   // 주먹을 쥐면 앞뒤·비틀기 값
       }
       return {frame};
     })();
@@ -3327,6 +3333,71 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       if (now - C.gAt > 60) { C.gAt = now; runGesture(now); }   // 제스처는 약 15fps
       if (CAL.on) CAL.frame(now);
       MON.frame(now);
+    }
+
+    // ===== 앱 UI 연출: 스티커 · 터짐 · LED =====
+    const FX = (() => {
+      const box = $("camFx"), led = $("camLed"), lx = led.getContext("2d");
+      const lensC = () => { const r = lens.getBoundingClientRect(); return {x: r.left + r.width / 2, y: r.top + r.height / 2, r: r.width / 2}; };
+      function sticker(text, col = "pk", at) {
+        if (!C.on) return; const L = lensC(), p = at || {x: L.x + L.r * .52, y: L.y - L.r * .62};
+        const el = document.createElement("span"); el.className = "stk " + col; el.textContent = text; box.appendChild(el);
+        const w = el.offsetWidth, h = el.offsetHeight, rot = (Math.random() < .5 ? -1 : 1) * (4 + Math.random() * 2);
+        G.set(el, {x: p.x - w / 2, y: p.y - h / 2, rotation: rot});
+        if (reduced) { setTimeout(() => el.remove(), 1400); return; }
+        G.timeline({onComplete: () => el.remove()})
+          .fromTo(el, {scale: .2, opacity: 0}, {scale: 1, opacity: 1, duration: .5, ease: "back.out(2.6)"})   // 앱 팝 곡선
+          .to(el, {y: "-=10", duration: .9, ease: "sine.inOut"}, .5)
+          .to(el, {scale: .6, opacity: 0, duration: .3, ease: "power2.in"}, 1.4);
+      }
+      function burst(at, n = 16) {   // 보상 터짐 — 라임 링 1 + 점·별 (라임 · 잉크 · 흰), 0.9초
+        if (!C.on || reduced) return; const L = lensC(), p = at || {x: L.x, y: L.y};
+        const g = document.createElement("span"); g.className = "brs"; g.style.transform = `translate(${p.x}px,${p.y}px)`; box.appendChild(g);
+        const ring = document.createElement("i"); ring.style.cssText = "width:60px;height:60px;margin:-30px 0 0 -30px;box-shadow:inset 0 0 0 3px #CCE500"; g.appendChild(ring);
+        G.fromTo(ring, {scale: .2, opacity: 1}, {scale: 2.4, opacity: 0, duration: .7, ease: "power2.out"});
+        for (let i = 0; i < n; i++) { const d = document.createElement("i"), sz = 6 + Math.random() * 8, c = [["#CCE500", "#1E1F1B"], ["#1E1F1B", "#1E1F1B"], ["#fff", "#1E1F1B"]][i % 3];
+          d.style.cssText = `width:${sz}px;height:${sz}px;margin:${-sz / 2}px 0 0 ${-sz / 2}px;background:${c[0]};box-shadow:0 0 0 1.4px ${c[1]}`; g.appendChild(d);
+          const an = i / n * Math.PI * 2 + Math.random() * .4, R = 70 + Math.random() * 90;
+          G.fromTo(d, {x: 0, y: 0, scale: 1, opacity: 1}, {x: Math.cos(an) * R, y: Math.sin(an) * R, scale: .3, opacity: 0, duration: .55 + Math.random() * .35, ease: "power3.out"}); }
+        setTimeout(() => g.remove(), 1000);
+      }
+      // LED 점 숫자 — 앱의 dots(): 켜진 점 라임, 꺼진 점 3.5%
+      const F5 = {"0": "01110100011001110101110011000101110", "1": "00100011000010000100001000010001110", "2": "01110100010000100010001000100011111", "3": "11110000010000101110000010000111110",
+        "4": "00010001100101010010111110001000010", "5": "11111100001111000001000011000101110", "6": "00110010001000011110100011000101110", "7": "11111000010001000100010000100001000",
+        "8": "01110100011000101110100011000101110", "9": "01110100011000101111000010001001100", ".": "00000000000000000000000000110001100", "x": "00000000001000101010001000101010001"};
+      let ledT = 0;
+      function zoomLED(v) {
+        if (!C.on) return; const txt = v.toFixed(1) + "x", L = lensC(), dot = Math.max(3, Math.round(L.r * .013)), gap = dot * .5, cw = 5 * (dot + gap) + dot * 1.4;
+        const W2 = Math.ceil(txt.length * cw), H2 = Math.ceil(7 * (dot + gap)), dpr = Math.min(2, devicePixelRatio || 1);
+        if (led.width !== W2 * dpr || led.height !== H2 * dpr) { led.width = W2 * dpr; led.height = H2 * dpr; led.style.width = W2 + "px"; led.style.height = H2 + "px"; }
+        lx.setTransform(dpr, 0, 0, dpr, 0, 0); lx.clearRect(0, 0, W2, H2);
+        [...txt].forEach((ch, ci) => { const m = F5[ch] || F5["0"];
+          for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) { const on = m[r * 5 + c] === "1";
+            lx.fillStyle = on ? "#CCE500" : "rgba(255,255,255,.035)"; lx.beginPath(); lx.arc(ci * cw + c * (dot + gap) + dot / 2, r * (dot + gap) + dot / 2, dot / 2, 0, 7); lx.fill(); } });
+        led.style.left = (L.x - W2 / 2) + "px"; led.style.top = (L.y + L.r * .64) + "px"; led.classList.add("on");
+        clearTimeout(ledT); ledT = setTimeout(() => led.classList.remove("on"), 1200);
+      }
+      return {sticker, burst, zoomLED};
+    })();
+
+    // ===== 주먹 세션: 쥐는 순간을 기준으로 — 앞으로 밀면 가까이(손이 커짐), 당기면 멀리, 비틀면 망원 ↔ 접사 =====
+    function handMetrics() {
+      if (!C.hlm || !C.roi || (C.gHand && C.gHand !== C.hand)) return null;
+      const a = C.hlm[0], b = C.hlm[9], p5 = C.hlm[5], p17 = C.hlm[17], swp = C.sw * (vid.videoWidth || C.vwSim || 0);
+      if (!swp) return null;
+      return {r: Math.hypot(b.x - a.x, b.y - a.y) * C.roi.s / swp, ang: Math.atan2(p17.y - p5.y, p17.x - p5.x) * 180 / Math.PI};
+    }
+    const wrapD = d => ((d + 540) % 360) - 180;
+    function fistTick(dt, now) {
+      const isF = C.g.stable === "Closed_Fist" && C.g.score >= .6;
+      if (isF) C.fSeen = now;
+      const active = C.fSeen && now - C.fSeen < 380;   // 비틀 때 잠깐 흔들려도 유지
+      const m = handMetrics();
+      if (!active) { if (C.fs) { if (!C.fs.twisted && !tween) settleRing(macro ? MACRO_DEG : 0, false); C.fs = null; } return null; }
+      if (!C.fs) { if (!m || (C.spS || 0) > 1.8) return null; C.fs = {r0: m.r, rS: m.r, a0: m.ang, aS: 0, z0: zoom, t0: now, twisted: false}; G.killTweensOf(RING); return C.fs; }
+      const F = C.fs;
+      if (m) { const k = 1 - Math.exp(-dt / .16); F.rS += (m.r - F.rS) * k; F.aS += (wrapD(m.ang - F.a0) - F.aS) * k; }
+      return F;
     }
 
     // ---- 자세 → 손 위치 · 속도 ----
@@ -3390,34 +3461,54 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       if (state !== C.st) { C.st = state; C.stAt = now; }   // 지금 단계에 머문 시간
       const inSt = now - C.stAt;
       say(C.g.stable !== "None" ? "모션 인식 중 · " + (GK[C.g.stable] || "") : "모션 인식 중");
+      const F = GS ? fistTick(dt, now) : null;
+      if (state === "LOCK" && C.prevSt !== "LOCK" && now - (C.stkAt || 0) > 5000) { C.stkAt = now; FX.sticker("찾았다!", "pk"); FX.burst(undefined, 10); }   // 락온 순간(5초에 한 번)
+      C.prevSt = state;
       if (state === "IDLE" || state === "LOCK") {
-        if (state === "IDLE") coach.set("idle" + (raised ? 1 : 0), "palm", raised ? "손으로 렌즈를 움직여요" : "손을 들어 보세요", raised ? "사슴벌레를 찾아 렌즈 가운데에 담아요" : "손을 든 쪽으로 렌즈가 따라와요");
-        else coach.set("lock" + (fist ? 1 : 0), "fist", fist ? "그대로 꽉 — 다가가는 중" : GS ? "찾았다! 주먹을 쥐어요" : "찾았다! 그대로 멈춰요",
-                       fist ? "주먹을 쥐고 있으면 접사로 바뀌어요" : inSt > 4000 ? "주먹이 어려우면 손을 멈춰도 돼요" : GS ? "주먹을 쥐면 가까이 다가가요" : "멈추면 가까이 다가가요", {act: fist});
-        if (raised && !tween && !RING.drag) {
-          if (!(state === "LOCK" && fist)) {   // 주먹 = 붙잡기 — 렌즈를 멈춘다
+        if (F) {
+          // 앞뒤 → 줌: 손 크기 비율의 로그, ±6%는 무시, 2.4제곱으로 키운다
+          let e = Math.log(F.rS / F.r0); e = Math.sign(e) * Math.max(0, Math.abs(e) - .06);
+          const zt = clamp(F.z0 * Math.exp(e * 2.4), 1, 3), zk = 1 - Math.exp(-dt / .18), zPrev = zoom;
+          zoom += (zt - zoom) * zk; zoomTarget = zoom; applyScene();
+          if (Math.abs(zoom - zPrev) > .002 || Math.abs(zt - zoom) > .02) FX.zoomLED(zoom);
+          // 비틀기 → 베젤이 손목을 따라 돈다, 55°를 넘기면 접사
+          const tw = clamp(Math.abs(F.aS) / 55, 0, 1);
+          if (!F.twisted) RING.rot = tw * MACRO_DEG * .92;
+          const ready = state === "LOCK" && zoom >= 1.995;
+          coach.set(ready ? "f-twist" : "f-push", ready ? "twist" : "push", ready ? "주먹을 돌려요!" : `${zoom.toFixed(1)}배 — ${zt > zoom + .01 ? "다가가는 중" : zt < zoom - .01 ? "멀어지는 중" : "앞으로 쭉 밀어요"}`,
+            ready ? "문고리 돌리듯 — 접사 모드로" : state === "LOCK" ? "2배가 되면 주먹을 돌려 접사로" : "당기면 멀어져요 · 손을 펴면 다시 움직여요", {act: true, rot: ready ? F.aS : 0});
+          if (!F.twisted && Math.abs(F.aS) > 55) {
+            F.twisted = true;
+            if (canMacro()) { setMacro(true); FX.sticker("접사!", "lm"); FX.burst(); }
+            else { refuse(); nudge(); coach.warn(state === "LOCK" ? "먼저 2배까지 쭉 밀어요" : "사슴벌레를 먼저 찾아요"); settleRing(0, false); }
+          }
+        } else {
+          if (state === "IDLE") coach.set("idle" + (raised ? 1 : 0), "palm", raised ? "손바닥으로 렌즈를 움직여요" : "손을 들어 보세요",
+                                          raised ? (GS ? "주먹을 쥐고 앞으로 밀면 가까이 · 당기면 멀리" : "사슴벌레를 찾아 가운데에 담아요") : "손을 든 쪽으로 렌즈가 따라와요");
+          else coach.set("lock", "fist", GS ? "찾았다! 주먹을 쥐어요" : "찾았다! 그대로 멈춰요", GS ? "주먹을 앞으로 쭉 밀면 가까이 다가가요" : "멈추면 가까이 다가가요");
+          if (raised && !tween && !RING.drag) {
             const nx = clamp((C.sm.x - (K.rx0 + K.rx1) / 2) / ((K.rx1 - K.rx0) / 2 * .85), -1, 1);
             const ny = clamp((C.sm.y - (K.ry0 + K.ry1) / 2) / ((K.ry1 - K.ry0) / 2 * .85), -1, 1);
             let tx = W / 2 + nx * W * .5, ty = H * .5 + ny * H * .5;   // 범위를 줄여 손 떨림이 덜 커지게
             if (state === "LOCK") { tx += (B.x - tx) * .45; ty += (B.y - ty) * .45; }   // 대상 근처면 살짝 끌어당김
             const k = 1 - Math.exp(-dt / .38);   // 0.38초에 걸쳐 따라감 — 휙휙 대신 스르르
             let mx = (tx - cam.x) * k, my = (ty - cam.y) * k;
-            const lim = 520 * dt, ml = Math.hypot(mx, my); if (ml > lim) { mx *= lim / ml; my *= lim / ml; }   // 최고 속도 제한
-            if (Math.hypot(tx - cam.x, ty - cam.y) > 4) { cam.x += mx; cam.y += my; }   // 아주 작은 흔들림은 무시
+            const lim = 520 * dt, ml = Math.hypot(mx, my); if (ml > lim) { mx *= lim / ml; my *= lim / ml; }
+            if (Math.hypot(tx - cam.x, ty - cam.y) > 4) { cam.x += mx; cam.y += my; }
+            // 제스처 모델이 없을 때만: 가만히 있으면 천천히 다가간다(예전 방식)
+            if (!GS) { if (state === "LOCK" && C.still > .6) zoom = Math.min(2, zoom + dt * .45); else if (state === "IDLE" && zoom > 1) zoom = Math.max(1, zoom - dt * .5); zoomTarget = zoom; }
+            applyScene();
           }
-          // 줌은 목표로 천천히: 주먹(0.56초 확인 뒤) 또는 0.6초 이상 가만히 있을 때만 다가가고, 다시 움직이면 서서히 물러난다
-          let zg = zoom;
-          if (state === "LOCK" && fist) zg = 2.0;
-          else if (state === "LOCK" && C.still > .6) zg = Math.min(2.0, zoom + .5);
-          else if ((C.spS || 0) > K.still * 1.6 || state === "IDLE") zg = 1.0;
-          const zr = zg > zoom ? (fist ? .9 : .45) : .5;   // 1초에 몇 배씩
-          zoom = zg > zoom ? Math.min(zg, zoom + dt * zr) : Math.max(zg, zoom - dt * zr);
-          zoomTarget = zoom; applyScene();
+          if (!GS && state === "LOCK" && zoom >= 1.995 && C.still > 1.3 && canMacro()) { C.still = 0; setMacro(true); }
         }
-        if (state === "LOCK" && zoom >= 1.995 && ((fist && held("Closed_Fist", 600)) || C.still > 1.3) && canMacro()) { C.still = 0; C.g.fired = "Closed_Fist"; setMacro(true); }
       } else if (state === "MACRO") {
-        coach.set("macro", "fist", GS ? "한 번 더 주먹!" : "가만히 — 사진을 찍어요", GS ? "손을 폈다가 다시 쥐면 사진을 찍어요" : "조금만 그대로 있어요", {act: fist});
-        if (once("Closed_Fist", 500) || C.still > 1.4) { C.still = 0; capBtn.click(); }
+        if (F && !F.twisted) {
+          const tw = clamp(Math.abs(F.aS) / 55, 0, 1); RING.rot = MACRO_DEG * (1 - tw * .92);
+          if (Math.abs(F.aS) > 55) { F.twisted = true; setMacro(false); FX.sticker("망원", "yl"); }
+        }
+        coach.set(F ? "m-twist" : "macro", F ? "twist" : "victory", F ? "반대로 돌리면 망원" : GS ? "브이! 하면 찰칵" : "가만히 — 사진을 찍어요",
+                  F ? "손을 펴면 접사 그대로예요" : GS ? "브이 손으로 사진을 찍어 스캔해요" : "조금만 그대로 있어요", {act: !F, rot: F ? F.aS : 0});
+        if ((GS && once("Victory", 300)) || (!GS && C.still > 1.4)) { C.still = 0; capBtn.click(); FX.sticker("찰칵!", "yl"); FX.burst(undefined, 12); }
       } else if (state === "SCAN") {
         coach.set("scan", "hold", "움직이지 마세요!", "팔은 내려도 괜찮아요 — 몸만 그대로");
         // 흔들림 = 몸이 움직이거나, 든 손을 세게 휘저을 때 (팔을 천천히 내리는 건 괜찮다)
@@ -3428,12 +3519,12 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
         if (swung(h, now, win) && now - C.swingAt > 800) {
           C.swingAt = now;
           const Ls = lens.clientWidth, pts = win.map(q => ({x: Ls / 2 + q.x / 2.2 * Ls * .5, y: Ls / 2 + (q.y + .4) / 2 * Ls * .5, t: q.t}));
-          swing(pts);
+          swing(pts); setTimeout(() => { if (state === "CATCH") { FX.sticker("WOW!", "yl"); FX.burst(undefined, 22); } }, 520);
         }
       } else if (state === "CATCH") {
         if (catchConfirm.classList.contains("show")) {
           coach.set("confirm", GS ? "thumb" : "swing", GS ? "잡았다! 엄지척" : "잡았다! 한 번 더 휙", "도감에 넣어요", {act: true});
-          if ((once("Thumb_Up", 300) || (sp > K.swing && now - C.swingAt > 900))) { C.swingAt = now; ccAddBtn.click(); }
+          if ((once("Thumb_Up", 300) || (sp > K.swing && now - C.swingAt > 900))) { C.swingAt = now; ccAddBtn.click(); FX.sticker("도감에 쏙!", "lm"); FX.burst(); }
         } else if (morph.classList.contains("show")) coach.set("morph", "star", "도감에 기록하는 중…", "어떤 친구로 변할까요?");
         else coach.set("netting", "net", "그물이 날아가요!", "", {act: true});
       } else if (state === "DONE") {
@@ -3469,9 +3560,10 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       const S = [
         {id:"still", t:"손을 가슴 앞에 들고 가만히", d:"3초 동안 그대로 있어 주세요. 떨림 정도를 재요.", ms:3000},
         {id:"reach", t:"손을 위·아래·왼쪽·오른쪽 끝까지", d:"팔을 쭉 뻗어 크게 원을 그리듯 천천히 움직여요. 렌즈가 움직일 범위를 재요.", ms:6000},
-        {id:"Closed_Fist", t:"주먹을 꽉 쥐어 보세요", d:"카메라 쪽으로 손을 보여 주세요. 체험에서 ‘다가가기 · 캡쳐’예요.", ms:8000, g:1},
+        {id:"Closed_Fist", t:"주먹을 꽉 쥐어 보세요", d:"카메라 쪽으로 손을 보여 주세요. 체험에서 ‘붙잡고 밀고 당기고 돌리기’예요.", ms:8000, g:1},
         {id:"Open_Palm", t:"손바닥을 활짝 펴 보세요", d:"평소에 렌즈를 움직일 때의 손이에요.", ms:8000, g:1},
         {id:"Thumb_Up", t:"엄지척!", d:"잡은 곤충을 도감에 넣을 때 써요.", ms:8000, g:1},
+        {id:"Victory", t:"브이!", d:"접사 화면에서 사진을 찍을 때 써요.", ms:8000, g:1},
         {id:"swing", t:"잡는 것처럼 팔을 크게 휘둘러요", d:"3번 휘둘러 주세요. 세기를 재서 스윙 기준을 정해요.", ms:20000},
       ];
       const R = {};
@@ -3557,7 +3649,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
         k.reachOK = false;
         if (r && r.n > 40 && r.x1 - r.x0 > 1.2) { k.rx0 = r.x0; k.rx1 = r.x1; k.reachOK = true; }
         if (r && r.n > 40 && r.y1 - r.y0 > 1.0) { k.ry0 = r.y0; k.ry1 = r.y1; k.reachOK = true; }
-        const confs = ["Closed_Fist", "Open_Palm", "Thumb_Up"].map(g => R[g]).filter(x => x && x.ok).map(x => x.conf);
+        const confs = ["Closed_Fist", "Open_Palm", "Thumb_Up", "Victory"].map(g => R[g]).filter(x => x && x.ok).map(x => x.conf);
         if (confs.length) k.gconf = clamp(Math.min(...confs) * .8, .45, .7);
         return k;
       }
@@ -3571,7 +3663,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
         res.innerHTML = `<div><span>떨림</span><b>${R.still ? R.still.noise.toFixed(2) + " → 멈춤 기준 " + K2.still.toFixed(2) : "기본값"}</b></div>`
           + `<div><span>스윙 세기</span><b>${sw}</b></div>`
           + `<div><span>팔 닿는 범위</span>${K2.reachOK ? `<b>${(K2.rx1 - K2.rx0).toFixed(1)} × ${(K2.ry1 - K2.ry0).toFixed(1)} 어깨폭</b>` : "<b class=bad>측정 못 함 · 기본값</b>"}</div>`
-          + `<div><span>주먹</span>${g("Closed_Fist")}</div><div><span>손바닥</span>${g("Open_Palm")}</div><div><span>엄지척</span>${g("Thumb_Up")}</div>`;
+          + `<div><span>주먹</span>${g("Closed_Fist")}</div><div><span>손바닥</span>${g("Open_Palm")}</div><div><span>엄지척</span>${g("Thumb_Up")}</div><div><span>브이</span>${g("Victory")}</div>`;
         res.classList.add("on"); bGo.hidden = bAgain.hidden = false; bSkip.hidden = true;
       }
       bGo.onclick = () => { if (K2) { Object.assign(K, K2); saved = {k: K2, at: Date.now()}; try { localStorage.setItem(LS, JSON.stringify(saved)); } catch (e) {} }
