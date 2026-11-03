@@ -316,6 +316,9 @@ a{color:inherit;text-decoration:none}
 .cal .sum .bar i{display:block;height:100%;width:50%;border-radius:2px;background:var(--lime2);transform-origin:0 50%}
 .day{display:flex;flex-direction:column;gap:28px;min-height:0}
 .day .big{position:relative;flex:1;min-height:150px;max-height:250px;border-radius:22px;overflow:hidden;background:var(--fill);display:flex;align-items:flex-end;justify-content:center;cursor:pointer}
+.day .big .hpup{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.day .big.pup > img{visibility:hidden}
+.day .big .hpa{position:absolute;pointer-events:none}
 .day .big .bgi{position:absolute;inset:-14px;background:center/cover;will-change:transform}
 .day .big img{position:relative;height:78%;width:auto;max-width:54%;object-fit:contain;margin-bottom:5%;will-change:transform}
 .day .big .tag{position:absolute;top:14px;z-index:2}
@@ -1444,7 +1447,7 @@ const rise = els => { if (!RM.matches) els.forEach((e, i) => e.animate([{transfo
     cv.addEventListener('pointerleave', () => { S.ptr = null; });
     cv.addEventListener('click', e => { if (!ready || !on || RMq.matches) return; const h = hit(e); if (!h.inside) return; e.stopPropagation();
       if (['loop', 'swoop', 'enter'].includes(S.act) || (S.act === 'joy' && S.t - S.at < 1)) return; begin('joy'); setTimeout(() => onTap && onTap(anc), 300); });
-    return {load, start, stop, el: cv, act: a => begin(a), adv: sec => { cancelAnimationFrame(raf); raf = 0; let n = Math.round(sec * 60); while (n-- > 0) step(1 / 60); draw(); }, state: () => ({act: S.act, x: S.x, y: S.y, sc: S.sc, flip: S.flip, ready, W, H})};
+    return {load, start, stop, destroy() { stop(); lost = true; const ext=gl.getExtension('WEBGL_lose_context'); if(ext) ext.loseContext(); cv.remove(); anc.remove(); }, el: cv, act: a => begin(a), adv: sec => { cancelAnimationFrame(raf); raf = 0; let n = Math.round(sec * 60); while (n-- > 0) step(1 / 60); draw(); }, state: () => ({act: S.act, x: S.x, y: S.y, sc: S.sc, flip: S.flip, ready, W, H})};
   }
 
 
@@ -1525,13 +1528,14 @@ function enter(v) {
 
 // ---------- 탭 ----------
 const VIEWS = ['home', 'collection', 'log', 'me'], ink = $('#navInk');
-let view = null, pup = null;
+let view = null, pup = null, logPup = null;
 function show(v, quiet) {
   if (!VIEWS.includes(v)) v = 'home'; if (v === view) return; view = v;
   $$('.view').forEach(s => { const on = s.id === 'v-' + v; s.classList.toggle('on', on); s.classList.remove('in'); if (on && !quiet && !RM.matches) { void s.offsetWidth; s.classList.add('in'); } });
   const a = $(`#nav a[data-v="${v}"]`); $$('#nav a').forEach(x => { x.classList.toggle('on', x === a); x.setAttribute('aria-current', x === a ? 'page' : 'false'); });
   goo(ink, {y: a.offsetTop}, 'y', !quiet); if (document.body.classList.contains('flow')) scrollTo(0, 0);
   if (pup) { if (v === 'collection') pup.start(); else pup.stop(); }
+  if (logPup) { if (v === 'log') logPup.start(); else logPup.stop(); }
   if (!quiet) { enter(v); if (MO) G.fromTo(a.querySelector('svg'), {scale: .6, rotation: -16}, {scale: 1, rotation: 0, duration: .8, ease: 'elastic.out(1,.4)'}); }
   if (location.hash.slice(1) !== v) { try { history.replaceState(null, '', '#' + v); } catch (e) {} }   // 미리보기 iframe(about:srcdoc)에선 막혀 있다
 }
@@ -1677,7 +1681,7 @@ function cal(dir = 0) {
   const f = first(month); let h = '<i class="sink" id="sink"></i>';
   for (let i = 0; i < f; i++) h += '<span class="d e"></span>';
   for (let d = 1; d <= 31; d++) { const v = month === 8 && DAYS[d], sun = (f + d - 1) % 7 === 0 ? ' sun' : '';
-    if (v) h += `<button type="button" class="d ct${sun}${d === 25 ? ' tdy' : ''}${d === dsel ? ' on' : ''}" data-d="${d}" aria-label="8월 ${d}일 · ${v[0]}">${d}${v[5] ? `<span class="xp">+${v[5]}</span>` : ''}<span class="th" style="${v[4] ? `background-image:url('${v[4]}')` : ''}">${v[4] ? '' : `<img src="${v[3]}" alt="">`}</span></button>`;
+    if (v) h += `<button type="button" class="d ct${sun}${d === 25 ? ' tdy' : ''}${d === dsel ? ' on' : ''}" data-d="${d}" aria-label="8월 ${d}일 · ${v[0]}">${d}${v[5] && d !== 25 ? `<span class="xp">+${v[5]}</span>` : ''}<span class="th" style="${v[4] ? `background-image:url('${v[4]}')` : ''}">${v[4] ? '' : `<img src="${v[3]}" alt="">`}</span></button>`;
     else h += `<span class="d${sun}${month === 8 && d > 25 ? ' fu' : ''}" data-d="${d}">${d}</span>`; }
   for (let i = f + 31; i < 42; i++) h += '<span class="d e"></span>';
   $('#cal').innerHTML = h;
@@ -1729,6 +1733,7 @@ function pick(d) {
   $$('#cal .d.ct').forEach(c => c.classList.toggle('on', +c.dataset.d === d)); placeSink(); day(dir);
 }
 function day(dir = 0, again) {
+  if (logPup) { logPup.destroy(); logPup=null; }
   const el = $('#day'); if (kb) kb.kill(); if (tw) tw.kill();
   if (month !== 8) { el.innerHTML = `<div class="big"><span class="bgi" style="background-image:url('${DATA.photos[8]}')"></span></div><div class="panel empty-day"><h3>7월은 아직 탐험 전이에요</h3><p>누비는 8월 1일에 왔어요.<br>첫 탐험은 8월 3일, 서울숲 꽃밭에서 꿀벌을 만난 날이에요.</p><button class="cta sm" type="button" id="toAug">8월 일지 보기<i>${ARROW}</i></button></div>`;
     $('#toAug').addEventListener('click', () => { month = 8; cal(1); day(1); }); magnet($('#toAug')); rise([...el.children]); return; }
@@ -1743,6 +1748,13 @@ function day(dir = 0, again) {
   $$('#day .mrow button').forEach(li => li.addEventListener('click', () => pick(+li.dataset.d)));
   $$('#day .tabs button').forEach(t => t.addEventListener('click', () => { if (t.dataset.t === tab) return; const o = TABS.findIndex(x => x[0] === tab), n = TABS.findIndex(x => x[0] === t.dataset.t); tab = t.dataset.t; setTab(n > o ? 1 : -1); }));
   bigFx(dir, ch, v);
+  if (k && ch) {
+    const hero=$('#dBig'); logPup=Puppet(hero, a=>burst(a,14));
+    if (logPup) { const h=hero.offsetHeight || 280, w=hero.offsetWidth || 440;
+      logPup.load(k,ch,Math.round(Math.min(h*.72*(d.chh||124)/124,w*.5/(d.ar||1))));
+      if(view==='log') logPup.start();
+    }
+  }
   setTab(0, true);
   if (!MO) return;
   G.fromTo('#day .hd > div > *, #day .hd .cta', {y: 14, opacity: 0}, {y: 0, opacity: 1, duration: .65, ease: 'expo.out', stagger: .06, delay: .12});
