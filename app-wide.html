@@ -586,7 +586,7 @@ body.flow .r3{flex:none;height:380px}
 .toast i{width:7px;height:7px;border-radius:50%;background:var(--lime)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .fx{position:fixed;left:0;top:0;border-radius:50%;pointer-events:none;z-index:40}
-.demo-pill{position:fixed;right:16px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:30;font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px;opacity:0;transition:opacity .3s;pointer-events:none}
+.demo-pill{background:rgba(255,255,255,.94);padding:9px 14px;border:1px solid rgba(35,35,33,.1);border-radius:999px;box-shadow:0 4px 18px rgba(0,0,0,.06);position:fixed;right:16px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:30;font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px;opacity:0;transition:opacity .3s;pointer-events:none}
 .demo-pill i{width:6px;height:6px;border-radius:50%;background:var(--lime2)}
 body.demo .demo-pill{opacity:1}
 
@@ -1896,13 +1896,45 @@ if (MO) $$('.dv .art > img').forEach((im, i) => G.to(im, {y: -7, duration: 2.6 +
 // ---------- 시작 ----------
 show(location.hash.slice(1) || 'home', true);
 requestAnimationFrame(() => { sel('stag', true); cal(); day(); bdg(1, true); fit(); enter(view); });
-const IDLE = window.NUVI_IDLE || 40000; let last = Date.now(), demo = false, dT = 0, dk = 1;
-['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'].forEach(t => addEventListener(t, () => { last = Date.now(); if (demo) { demo = false; document.body.classList.remove('demo'); clearTimeout(dT); } }, {passive: true, capture: true}));
+// Exhibition tour: 20 seconds without input, then a cancellable screen sequence.
+const idleParam = Number(new URLSearchParams(location.search).get('idle'));
+const IDLE = Number(window.NUVI_IDLE) > 0 ? Number(window.NUVI_IDLE) : idleParam > 0 ? idleParam * 1000 : 20000;
+let last = Date.now(), demo = false, dT = 0, actionT = 0, dk = 0;
 const ks = Object.keys(DATA.ins);
-function tour() { if (!demo) return; const i = (VIEWS.indexOf(view) + 1) % VIEWS.length; show(VIEWS[i]);
-  if (VIEWS[i] === 'collection') sel(ks[dk++ % ks.length]);
-  dT = setTimeout(tour, VIEWS[i] === 'collection' ? 12000 : 7000); }
-setInterval(() => { if (!demo && Date.now() - last > IDLE) { demo = true; document.body.classList.add('demo'); tour(); } }, 1000);
+const demoPill = $('.demo-pill');
+function stopTour() {
+  demo = false; document.body.classList.remove('demo');
+  clearTimeout(dT); clearTimeout(actionT);
+  demoPill.setAttribute('aria-hidden', 'true');
+}
+function tourInput() { last = Date.now(); if (demo) stopTour(); }
+['pointerdown', 'keydown', 'wheel', 'touchstart', 'input'].forEach(t => addEventListener(t, tourInput, {passive:true, capture:true}));
+// A resting mouse must not prevent the exhibit from playing; drags still count as use.
+addEventListener('pointermove', e => { if (e.buttons) tourInput(); }, {passive:true, capture:true});
+function tourBlocked() {
+  return document.hidden || $('#lbx').classList.contains('on') || $('#goc').getAttribute('aria-hidden') === 'false'
+    || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) || document.activeElement.isContentEditable;
+}
+function tour() {
+  if (!demo) return;
+  if (tourBlocked()) { stopTour(); last = Date.now(); return; }
+  const next = VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length];
+  show(next);
+  const labels = {home:'탐험', collection:'곤충 도감', log:'탐험 기록', me:'내 기기'};
+  demoPill.innerHTML = '<i></i>자동 둘러보기 · ' + labels[next] + ' · 터치하면 직접 체험';
+  if (next === 'collection') {
+    sel(ks[dk++ % ks.length]);
+    actionT = setTimeout(() => { if (demo && view === 'collection') sel(ks[dk++ % ks.length]); }, 6000);
+  }
+  dT = setTimeout(tour, next === 'collection' ? 12000 : 8000);
+}
+setInterval(() => {
+  if (!demo && !tourBlocked() && Date.now() - last >= IDLE) {
+    demo = true; document.body.classList.add('demo');
+    demoPill.setAttribute('aria-hidden', 'false'); tour();
+  }
+}, 1000);
+document.addEventListener('visibilitychange', () => { stopTour(); last = Date.now(); });
 })();
 </script>
 
