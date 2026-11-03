@@ -3322,7 +3322,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     }
     const wrapD = d => ((d + 540) % 360) - 180;
     function fistTick(dt, now) {
-      const isF = C.g.stable === "Closed_Fist" && C.g.score >= .6;
+      const isF = C.g.stable === "Closed_Fist" && C.g.raw === "Closed_Fist" && C.g.score >= K.gconf && C.gHand === C.hand;
       if (isF) C.fSeen = now;
       const active = C.fSeen && now - C.fSeen < 380;   // 비틀 때 잠깐 흔들려도 유지
       const m = handMetrics();
@@ -3410,38 +3410,29 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       if (state === "IDLE" || state === "LOCK") {
         if (F) {
           C.pv = null;   // 놓았을 때 그 자리에서 이어서
-          // 앞뒤 → 줌(조이스틱처럼): 쥔 자리보다 앞으로 밀고 있으면 점점 가까이, 당기고 있으면 점점 멀리, 제자리면 멈춤
-          //   손 크기 비율 ±7%는 무시 · 27%면 최고 속도(1초에 약 1.8배) — 깊이를 정확히 못 재도 편하게
-          let v = F.rS / F.r0 - 1; v = Math.sign(v) * Math.max(0, Math.abs(v) - .07);
-          // 비트는 중(15° 이상)이면 줌을 멈춘다 — 돌리려는 손이 밀린 채여도 확대가 계속되지 않게
-          const rate = Math.abs(F.aS) > 15 ? 0 : clamp(v / .28, -1, 1), zPrev = zoom;   // 35% 밀어야 최고 속도
-          F.rt = (F.rt || 0) + (rate - (F.rt || 0)) * (1 - Math.exp(-dt / .25));   // 속도도 부드럽게(천천히 붙고 천천히 멈춤)
-          let zn = clamp(zoom * Math.exp(F.rt * K.zspd * dt), 1, 3);   // 최고 속도: 1초에 e^zspd배 (기본 .28 ≈ 1.3배/초 — 1배→2배 약 2.5초)
-          // 락온 중엔 2배에서 한 번 멈춘다(1초) — 여기서 비틀면 접사. 계속 밀고 있으면 1초 뒤 더 커진다
-          if (state === "LOCK" && zoom <= 2.0 && zn > 2.0) { if (!F.at2) F.at2 = now; if (now - F.at2 < 1000) zn = 2.0; }
-          if (zn < 1.98) F.at2 = 0;
-          // 락온 중 확대하면 사슴벌레 쪽으로 같이 다가간다(사람이 민 만큼만 — 저절로 움직이지 않음)
-          if (state === "LOCK" && zn > zoom) { const m = clamp((zn - zoom) * 1.4, 0, 1); cam.x += (B.x - cam.x) * m; cam.y += (B.y - cam.y) * m; }
-          zoom = zn; zoomTarget = zoom; applyScene();
-          const zt = zoom + F.rt;   // 문구용(다가가는 중 / 멀어지는 중)
-          if (Math.abs(zoom - zPrev) > .001) FX.zoomLED(zoom);
-          // 비틀기 → 베젤이 손목을 따라 돈다, 55°를 넘기면 접사
-          const tw = clamp(Math.abs(F.aS) / 55, 0, 1);
-          if (!F.twisted) RING.rot = tw * MACRO_DEG * .92;
-          const ready = state === "LOCK" && zoom >= 1.995;
-          coach.set(ready ? "f-twist" : "f-push", ready ? "twist" : "push", ready ? "주먹을 돌려요!" : `${zoom.toFixed(1)}배 — ${zt > zoom + .01 ? "다가가는 중" : zt < zoom - .01 ? "멀어지는 중" : "앞으로 쭉 밀어요"}`,
-            ready ? "문고리 돌리듯 — 접사 모드로" : state === "LOCK" ? "2배가 되면 주먹을 돌려 접사로" : "당기면 멀어져요 · 손을 펴면 다시 움직여요", {act: true, rot: ready ? F.aS : 0});
-          if (!F.twisted && Math.abs(F.aS) > 55) {
-            F.twisted = true;
-            if (canMacro()) { setMacro(true); FX.sticker("접사!", "lm"); FX.burst(); }
-            else { refuse(); nudge(); coach.warn(state === "LOCK" ? "먼저 2배까지 쭉 밀어요" : "사슴벌레를 먼저 찾아요"); settleRing(0, false); }
+          // 주먹을 유지하면 자동 확대. 손을 펴면 현재 배율에서 멈춘다.
+          const zPrev = zoom;
+          if (state === "LOCK" && !tween) {
+            zoom = Math.min(2, zoom * Math.exp(K.zspd * dt));
+            const m = clamp((zoom - zPrev) * 1.4, 0, 1);
+            cam.x += (B.x - cam.x) * m; cam.y += (B.y - cam.y) * m;
+            zoomTarget = zoom; applyScene();
+            if (zoom > zPrev) FX.zoomLED(zoom);
+            if (zoom >= 1.995 && canMacro()) {
+              // 접사 진입 전의 비틀기는 캡처로 이어지지 않도록 새 기준을 잡는다.
+              F.a0 = handMetrics()?.ang ?? F.a0; F.aS = 0; F.twisted = false;
+              F.captureReadyAt = now + 700;
+              setMacro(true); FX.sticker("클로즈업!", "lm"); FX.burst();
+            }
           }
+          coach.set("f-auto", "fist", state === "LOCK" ? `${zoom.toFixed(1)}배 — 가까워지는 중` : "사슴벌레를 먼저 찾아요",
+            state === "LOCK" ? "주먹을 유지해요 · 가까워지면 비틀어 촬영해요" : "손을 펴서 렌즈를 움직여요", {act: true});
         } else {
           const engaging = raised && !C.eng && !tween;   // 손 찾는 중이면 그 안내만
           if (engaging) {}
           else if (state === "IDLE") coach.set("idle" + (raised ? 1 : 0), "palm", raised ? "손바닥으로 렌즈를 움직여요" : "손을 들어 보세요",
-                                          raised ? (GS ? "주먹을 쥐고 앞으로 밀면 가까이 · 당기면 멀리" : "사슴벌레를 찾아 가운데에 담아요") : "손을 들면 렌즈를 움직일 수 있어요");
-          else coach.set("lock", "fist", GS ? "찾았다! 주먹을 쥐어요" : "찾았다! 그대로 멈춰요", GS ? "주먹을 앞으로 쭉 밀면 가까이 다가가요" : "멈추면 가까이 다가가요");
+                                          raised ? (GS ? "주먹을 쥐면 자동으로 가까워져요" : "사슴벌레를 찾아 가운데에 담아요") : "손을 들면 렌즈를 움직일 수 있어요");
+          else coach.set("lock", "fist", GS ? "찾았다! 주먹을 쥐어요" : "찾았다! 그대로 멈춰요", GS ? "주먹을 유지하면 자동으로 가까워져요" : "멈추면 가까이 다가가요");
           // ---- 손을 먼저 찾고(0.6초 가만히 = 손 잡기), 그다음부터 '손이 움직인 만큼만' 렌즈가 움직인다 (트랙패드처럼 상대 이동) ----
           if (!raised) { C.eng = 0; C.pv = null; C.engT = 0; }
           else if (tween || RING.drag) { C.pv = null; C.tgt = null; }   // 자동 이동 중 — 끝나면 그 자리에서 이어서
@@ -3472,12 +3463,21 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
         }
       } else if (state === "MACRO") {
         if (F && !F.twisted) {
-          const tw = clamp(Math.abs(F.aS) / 55, 0, 1); RING.rot = MACRO_DEG * (1 - tw * .92);
-          if (Math.abs(F.aS) > 55) { F.twisted = true; setMacro(false); FX.sticker("망원", "yl"); }
+          if (tween || now < (F.captureReadyAt || 0)) {
+            // 전환 중의 손목 자세를 기준으로 하여 자동 촬영을 막는다.
+            F.a0 = handMetrics()?.ang ?? F.a0; F.aS = 0;
+          } else {
+            const tw = clamp(Math.abs(F.aS) / 55, 0, 1);
+            RING.rot = MACRO_DEG + tw * MACRO_DEG * .92;
+            if (Math.abs(F.aS) > 55) {
+              F.twisted = true; C.still = 0; capBtn.click();
+              FX.sticker("찰칵!", "yl"); FX.burst(undefined, 12);
+            }
+          }
         }
-        coach.set(F ? "m-twist" : "macro", F ? "twist" : "victory", F ? "반대로 돌리면 망원" : GS ? "브이! 하면 찰칵" : "가만히 — 사진을 찍어요",
-                  F ? "손을 펴면 접사 그대로예요" : GS ? "브이 손으로 사진을 찍어 스캔해요" : "조금만 그대로 있어요", {act: !F, rot: F ? F.aS : 0});
-        if ((GS && once("Victory", 300)) || (!GS && C.still > 1.4)) { C.still = 0; capBtn.click(); FX.sticker("찰칵!", "yl"); FX.burst(undefined, 12); }
+        coach.set("m-twist", GS ? "twist" : "hold", GS ? "주먹을 비틀면 찰칵!" : "가만히 — 사진을 찍어요",
+          GS ? "문고리 돌리듯 주먹을 돌려 촬영해요" : "조금만 그대로 있어요", {act: !!F, rot: F ? F.aS : 0});
+        if (!GS && C.still > 1.4) { C.still = 0; capBtn.click(); FX.sticker("찰칵!", "yl"); FX.burst(undefined, 12); }
       } else if (state === "SCAN") {
         coach.set("scan", "hold", "움직이지 마세요!", "팔은 내려도 괜찮아요 — 몸만 그대로");
         // 흔들림 = 몸이 움직이거나, 든 손을 세게 휘저을 때 (팔을 천천히 내리는 건 괜찮다)
@@ -3528,7 +3528,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
       const bGo = $("ccGo"), bAgain = $("ccAgain"), bSkip = $("ccSkip"), bClose = $("ccClose");
       const S = [
         {id:"still", t:"손을 가슴 앞에 들고 가만히", d:"3초 동안 그대로 있어 주세요. 떨림 정도를 재요.", ms:3000},
-        {id:"Closed_Fist", t:"주먹을 꽉 쥐어 보세요", d:"카메라 쪽으로 손을 보여 주세요. 체험에서 ‘붙잡고 밀고 당기고 돌리기’예요.", ms:8000, g:1},
+        {id:"Closed_Fist", t:"주먹을 꽉 쥐어 보세요", d:"카메라 쪽으로 손을 보여 주세요. 주먹을 유지하면 자동 클로즈업, 비틀면 촬영해요.", ms:8000, g:1},
         {id:"Open_Palm", t:"손바닥을 활짝 펴 보세요", d:"평소에 렌즈를 움직일 때의 손이에요.", ms:8000, g:1},
         {id:"Thumb_Up", t:"엄지척!", d:"잡은 곤충을 도감에 넣을 때 써요.", ms:8000, g:1},
         {id:"Victory", t:"브이!", d:"접사 화면에서 사진을 찍을 때 써요.", ms:8000, g:1},
@@ -3654,9 +3654,9 @@ gsap.registerPlugin(Draggable, InertiaPlugin, MotionPathPlugin, CustomEase, Cust
     // 카메라 모드 문구
     const CT = {"렌즈를 드래그해서 주변을 둘러보세요": "손을 들어 렌즈를 움직여 보세요",
                 "사슴벌레 발견! ＋ 버튼으로 더 가까이": () => C.gest ? "사슴벌레 발견! 주먹을 쥐면 다가가요" : "사슴벌레 발견! 손을 멈추면 다가가요",
-                "가까워졌어요! 베젤을 돌려 접사 모드로": () => C.gest ? "주먹을 쥔 채로 — 접사 모드로" : "조금만 더 멈춰요 — 접사 모드로",
-                "아직 멀어요! ＋ 버튼으로 2.0x까지": "조금 더 — 주먹을 쥐거나 가만히",
-                "접사 모드! 특징을 관찰해요 — 준비되면 캡쳐": () => C.gest ? "접사 모드! 주먹을 쥐면 캡쳐해요" : "접사 모드! 가만히 있으면 캡쳐해요",
+                "가까워졌어요! 베젤을 돌려 접사 모드로": () => C.gest ? "주먹을 유지하면 자동으로 접사 모드로" : "조금만 더 멈춰요 — 접사 모드로",
+                "아직 멀어요! ＋ 버튼으로 2.0x까지": "조금 더 — 주먹을 유지해 주세요",
+                "접사 모드! 특징을 관찰해요 — 준비되면 캡쳐": () => C.gest ? "접사 모드! 주먹을 비틀면 캡쳐해요" : "접사 모드! 가만히 있으면 캡쳐해요",
                 "캡쳐 완료! 렌즈 위로 휙 — 손목 스윙!": "지금! 팔을 크게 휘둘러 잡아요!",
                 "잡았습니다!": () => C.gest ? "잡았습니다! 엄지척 하면 도감에 쏙" : "잡았습니다! 한 번 더 휘두르면 도감에 쏙"};
     const text = t => { const v = C.on && CT[t]; return v ? (typeof v === "function" ? v() : v) : t; };
